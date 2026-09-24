@@ -1,0 +1,476 @@
+<title>ซ้อม Live Coding Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --paper: #f3f7f8;
+  --surface: #ffffff;
+  --ink: #15232b;
+  --muted: #56676f;
+  --rule: #d4dfe3;
+  --accent: #00708a;
+  --accent-soft: #dff1f5;
+  --hot: #b8235a;
+  --hot-soft: #fbe6ee;
+  --code-bg: #0f1e26;
+  --code-ink: #d6e4ea;
+  --code-rule: #22363f;
+  --t-comment: #6f8b97;
+  --t-string: #f0c67c;
+  --t-number: #f5906f;
+  --t-kw: #5fd3f2;
+  --t-bi: #c9a0f0;
+  --t-fn: #9ee3a4;
+  --inline-code-bg: #e6eef1;
+  --shadow: 0 1px 2px rgba(15, 30, 38, .06), 0 6px 20px rgba(15, 30, 38, .06);
+  --display: "Chakra Petch", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", "IBM Plex Sans Thai", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --header-h: 108px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0d151a;
+    --surface: #131f27;
+    --ink: #e1eaee;
+    --muted: #93a6af;
+    --rule: #25353e;
+    --accent: #4fc6e3;
+    --accent-soft: #143039;
+    --hot: #f2709b;
+    --hot-soft: #3a1a26;
+    --code-bg: #09131a;
+    --code-rule: #1c2d36;
+    --inline-code-bg: #1c2c35;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0d151a;
+  --surface: #131f27;
+  --ink: #e1eaee;
+  --muted: #93a6af;
+  --rule: #25353e;
+  --accent: #4fc6e3;
+  --accent-soft: #143039;
+  --hot: #f2709b;
+  --hot-soft: #3a1a26;
+  --code-bg: #09131a;
+  --code-rule: #1c2d36;
+  --inline-code-bg: #1c2c35;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.75 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- header ---------- */
+.masthead {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+}
+.masthead-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 20px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 24px;
+  align-items: end;
+}
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.brand h1 {
+  margin: 0;
+  font: 700 1.55rem/1.1 var(--display);
+  letter-spacing: -.01em;
+}
+.brand h1 .go { color: var(--accent); }
+.brand p { margin: 0; color: var(--muted); font-size: .88rem; }
+.tabs { grid-column: 1 / -1; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 600 .95rem/1 var(--display);
+  letter-spacing: .02em;
+  padding: 12px 14px 13px;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- timer ---------- */
+.timer {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--display);
+}
+.timer-display {
+  font: 600 1.35rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.2ch;
+  text-align: right;
+  padding-right: 4px;
+}
+.timer.running .timer-display { color: var(--accent); }
+.timer.done .timer-display { color: var(--hot); }
+.timer select, .timer button {
+  font: 600 .8rem/1 var(--display);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 7px 9px;
+  cursor: pointer;
+}
+.timer button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); min-width: 4.5em; }
+
+/* ---------- layout ---------- */
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 20px 96px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 48px;
+}
+.toc { position: sticky; top: calc(var(--header-h) + 24px); align-self: start; max-height: calc(100vh - var(--header-h) - 48px); overflow-y: auto; }
+.toc-title { margin: 0 0 8px; font: 600 .72rem/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.toc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.toc-list a {
+  display: block;
+  padding: 5px 10px;
+  border-left: 2px solid var(--rule);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .84rem;
+  line-height: 1.45;
+}
+.toc-list a:hover { color: var(--ink); border-left-color: var(--muted); }
+.toc-list a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+
+/* ---------- prose ---------- */
+.prose { max-width: 780px; min-width: 0; }
+.prose h1 { font: 700 clamp(1.7rem, 4vw, 2.3rem)/1.15 var(--display); margin: 0 0 12px; text-wrap: balance; }
+.prose h2 {
+  font: 700 1.45rem/1.25 var(--display);
+  margin: 0 0 14px;
+  padding-top: 8px;
+  text-wrap: balance;
+}
+.prose h3 { font: 600 1.1rem/1.35 var(--display); margin: 32px 0 10px; color: var(--ink); }
+.prose h2, .prose h3 { scroll-margin-top: calc(var(--header-h) + 20px); }
+.prose p { margin: 0 0 14px; }
+.prose ul, .prose ol { margin: 0 0 16px; padding-left: 1.4em; }
+.prose li { margin: 4px 0; }
+.prose li > ul, .prose li > ol { margin: 4px 0 0; }
+.prose a { color: var(--accent); text-underline-offset: 3px; }
+.prose strong { font-weight: 600; }
+.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 48px 0 40px; }
+.prose code {
+  font: .86em/1 var(--mono);
+  background: var(--inline-code-bg);
+  padding: .18em .4em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+  font-variant-ligatures: none;
+}
+.file-ref { font: .86em var(--mono); color: var(--accent); }
+.prose blockquote {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  background: var(--accent-soft);
+  border-radius: 8px;
+  color: var(--ink);
+}
+.prose blockquote p { margin: 0; }
+
+/* code blocks */
+.code {
+  position: relative;
+  margin: 0 0 18px;
+  background: var(--code-bg);
+  border-radius: 10px;
+  border: 1px solid var(--code-rule);
+}
+.code pre { margin: 0; padding: 16px 18px; overflow-x: auto; }
+.code code {
+  background: none;
+  padding: 0;
+  color: var(--code-ink);
+  font: 13.5px/1.65 var(--mono);
+  white-space: pre;
+  overflow-wrap: normal;
+  font-variant-ligatures: none;
+}
+.code-lang {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font: 600 .66rem/1 var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--t-comment);
+  pointer-events: none;
+}
+.t-comment { color: var(--t-comment); }
+.t-string { color: var(--t-string); }
+.t-number { color: var(--t-number); }
+.t-kw { color: var(--t-kw); }
+.t-bi { color: var(--t-bi); }
+.t-fn { color: var(--t-fn); }
+
+/* tables */
+.table-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 .78rem/1.3 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: color-mix(in srgb, var(--paper) 60%, var(--surface)); }
+tbody tr:last-child td { border-bottom: 0; }
+td:first-child { font-variant-numeric: tabular-nums; }
+
+/* details: hints, answers, full code */
+.prose details {
+  margin: 0 0 18px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.prose details > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font: 600 .9rem/1.4 var(--display);
+  letter-spacing: .01em;
+  color: var(--accent);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prose details > summary::-webkit-details-marker { display: none; }
+.prose details > summary::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s;
+  flex: none;
+}
+.prose details[open] > summary::before { transform: rotate(45deg); }
+.prose details[open] > summary { border-bottom: 1px solid var(--rule); }
+.prose details > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.prose details > :nth-child(2) { margin-top: 14px; }
+.prose details > :last-child { margin-bottom: 16px; }
+.prose details.full-code > .code { margin: 0; border-radius: 0 0 10px 10px; border: 0; }
+.prose details.full-code summary code { font-size: .8rem; }
+
+/* theory: each question as a row */
+#panel-theory h3 { margin: 26px 0 8px; font-size: 1.02rem; }
+#panel-theory details > summary { font-size: .82rem; padding: 7px 12px; }
+.theory-tools { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
+.theory-tools button {
+  font: 600 .82rem/1 var(--display);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* problem meta line + bug markers */
+.prose p:has(> strong:first-child + code) { color: var(--muted); font-size: .9rem; }
+.bug { color: var(--hot); font-weight: 600; }
+
+.panel[hidden], .toc[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  :root { --header-h: 150px; }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 20px; }
+  .toc { position: static; max-height: none; }
+  .toc-list { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+  .toc-list a { border: 1px solid var(--rule); border-radius: 999px; padding: 4px 11px; white-space: nowrap; background: var(--surface); }
+  .masthead-inner { grid-template-columns: 1fr; padding-inline: 16px; }
+  .timer { grid-row: auto; grid-column: 1; flex-wrap: wrap; }
+  .layout { padding-inline: 16px; }
+}
+</style>
+<!--BODY-->
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <h1>ซ้อม Live Coding <span class="go">Go</span></h1>
+      <p>14 โจทย์ + เฉลย · 50 คำถามทฤษฎี · อ้างอิง roadmap.sh</p>
+    </div>
+    <div class="timer" id="timer" role="group" aria-label="ตัวจับเวลา">
+      <span class="timer-display" id="timer-display" aria-live="polite">15:00</span>
+      <select id="timer-preset" aria-label="ตั้งเวลา">
+        <option value="10">10 นาที</option>
+        <option value="15" selected>15 นาที</option>
+        <option value="20">20 นาที</option>
+        <option value="25">25 นาที</option>
+        <option value="30">30 นาที</option>
+      </select>
+      <button type="button" class="primary" id="timer-toggle">เริ่ม</button>
+      <button type="button" id="timer-reset">รีเซ็ต</button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="ส่วนของเนื้อหา">
+{{TABS}}
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+  <div class="toc-col">
+{{TOCS}}
+  </div>
+  <div class="panels">
+{{PANELS}}
+  </div>
+</main>
+
+<script>
+(function () {
+  var TABS = ["problems", "solutions", "theory"];
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  // ---- tabs
+  function show(key, scrollTop) {
+    if (TABS.indexOf(key) < 0) key = "problems";
+    document.querySelectorAll(".tab").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === key ? "true" : "false");
+    });
+    document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== key; });
+    document.querySelectorAll("[data-toc]").forEach(function (t) { t.hidden = t.dataset.toc !== key; });
+    store.set("go-interview-tab", key);
+    if (scrollTop) window.scrollTo({ top: 0 });
+    spy();
+  }
+  document.querySelectorAll(".tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      show(b.dataset.tab, true);
+      try { history.replaceState(null, "", "#" + b.dataset.tab); } catch (e) {}
+    });
+  });
+  var initial = (location.hash || "").slice(1);
+  show(TABS.indexOf(initial) >= 0 ? initial : (store.get("go-interview-tab") || "problems"), false);
+
+  // ---- toc: scroll without touching the hash
+  document.querySelectorAll(".toc a").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) el.scrollIntoView({ block: "start" });
+    });
+  });
+
+  // ---- scroll spy
+  var ticking = false;
+  function spy() {
+    var toc = document.querySelector(".toc:not([hidden])");
+    if (!toc) return;
+    var links = toc.querySelectorAll("a");
+    var current = null;
+    var offset = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) + 40;
+    links.forEach(function (a) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el && el.getBoundingClientRect().top - offset <= 0) current = a;
+    });
+    links.forEach(function (a) { a.classList.toggle("active", a === current); });
+  }
+  window.addEventListener("scroll", function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(function () { spy(); ticking = false; }); }
+  }, { passive: true });
+
+  // ---- theory: open/close all answers
+  var theory = document.getElementById("panel-theory");
+  if (theory) {
+    var tools = document.createElement("div");
+    tools.className = "theory-tools";
+    tools.innerHTML = '<button type="button" id="open-all">เปิดคำตอบทั้งหมด</button>' +
+                      '<button type="button" id="close-all">ปิดคำตอบทั้งหมด</button>';
+    var firstP = theory.querySelector("p");
+    theory.insertBefore(tools, firstP ? firstP.nextSibling : theory.firstChild);
+    tools.addEventListener("click", function (e) {
+      var open = e.target.id === "open-all";
+      if (e.target.id !== "open-all" && e.target.id !== "close-all") return;
+      theory.querySelectorAll("details").forEach(function (d) { d.open = open; });
+    });
+  }
+
+  // ---- mark bug callouts
+  document.querySelectorAll(".prose strong").forEach(function (s) {
+    if (/^บั๊ก/.test(s.textContent)) s.classList.add("bug");
+  });
+
+  // ---- timer
+  var display = document.getElementById("timer-display");
+  var preset = document.getElementById("timer-preset");
+  var toggle = document.getElementById("timer-toggle");
+  var timerEl = document.getElementById("timer");
+  var remaining = 15 * 60, handle = null, endAt = 0;
+  function render() {
+    var m = Math.floor(Math.abs(remaining) / 60), s = Math.abs(remaining) % 60;
+    display.textContent = (remaining < 0 ? "-" : "") + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    timerEl.classList.toggle("done", remaining <= 0);
+  }
+  function tick() {
+    remaining = Math.round((endAt - Date.now()) / 1000);
+    render();
+  }
+  function stop() {
+    clearInterval(handle); handle = null;
+    timerEl.classList.remove("running");
+    toggle.textContent = "เริ่ม";
+  }
+  toggle.addEventListener("click", function () {
+    if (handle) { stop(); return; }
+    endAt = Date.now() + remaining * 1000;
+    handle = setInterval(tick, 250);
+    timerEl.classList.add("running");
+    toggle.textContent = "หยุด";
+  });
+  function reset() { stop(); remaining = parseInt(preset.value, 10) * 60; render(); }
+  document.getElementById("timer-reset").addEventListener("click", reset);
+  preset.addEventListener("change", reset);
+  render();
+
+  // keep --header-h in sync with the real header height
+  function measure() {
+    var h = document.querySelector(".masthead").getBoundingClientRect().height;
+    document.documentElement.style.setProperty("--header-h", Math.round(h) + "px");
+  }
+  measure();
+  window.addEventListener("resize", measure);
+})();
+</script>

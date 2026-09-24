@@ -1,0 +1,2133 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ซ้อม Live Coding Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --paper: #f3f7f8;
+  --surface: #ffffff;
+  --ink: #15232b;
+  --muted: #56676f;
+  --rule: #d4dfe3;
+  --accent: #00708a;
+  --accent-soft: #dff1f5;
+  --hot: #b8235a;
+  --hot-soft: #fbe6ee;
+  --code-bg: #0f1e26;
+  --code-ink: #d6e4ea;
+  --code-rule: #22363f;
+  --t-comment: #6f8b97;
+  --t-string: #f0c67c;
+  --t-number: #f5906f;
+  --t-kw: #5fd3f2;
+  --t-bi: #c9a0f0;
+  --t-fn: #9ee3a4;
+  --inline-code-bg: #e6eef1;
+  --shadow: 0 1px 2px rgba(15, 30, 38, .06), 0 6px 20px rgba(15, 30, 38, .06);
+  --display: "Chakra Petch", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", "IBM Plex Sans Thai", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --header-h: 108px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0d151a;
+    --surface: #131f27;
+    --ink: #e1eaee;
+    --muted: #93a6af;
+    --rule: #25353e;
+    --accent: #4fc6e3;
+    --accent-soft: #143039;
+    --hot: #f2709b;
+    --hot-soft: #3a1a26;
+    --code-bg: #09131a;
+    --code-rule: #1c2d36;
+    --inline-code-bg: #1c2c35;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0d151a;
+  --surface: #131f27;
+  --ink: #e1eaee;
+  --muted: #93a6af;
+  --rule: #25353e;
+  --accent: #4fc6e3;
+  --accent-soft: #143039;
+  --hot: #f2709b;
+  --hot-soft: #3a1a26;
+  --code-bg: #09131a;
+  --code-rule: #1c2d36;
+  --inline-code-bg: #1c2c35;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.75 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- header ---------- */
+.masthead {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+}
+.masthead-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 20px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 24px;
+  align-items: end;
+}
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.brand h1 {
+  margin: 0;
+  font: 700 1.55rem/1.1 var(--display);
+  letter-spacing: -.01em;
+}
+.brand h1 .go { color: var(--accent); }
+.brand p { margin: 0; color: var(--muted); font-size: .88rem; }
+.tabs { grid-column: 1 / -1; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 600 .95rem/1 var(--display);
+  letter-spacing: .02em;
+  padding: 12px 14px 13px;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- timer ---------- */
+.timer {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--display);
+}
+.timer-display {
+  font: 600 1.35rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.2ch;
+  text-align: right;
+  padding-right: 4px;
+}
+.timer.running .timer-display { color: var(--accent); }
+.timer.done .timer-display { color: var(--hot); }
+.timer select, .timer button {
+  font: 600 .8rem/1 var(--display);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 7px 9px;
+  cursor: pointer;
+}
+.timer button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); min-width: 4.5em; }
+
+/* ---------- layout ---------- */
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 20px 96px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 48px;
+}
+.toc { position: sticky; top: calc(var(--header-h) + 24px); align-self: start; max-height: calc(100vh - var(--header-h) - 48px); overflow-y: auto; }
+.toc-title { margin: 0 0 8px; font: 600 .72rem/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.toc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.toc-list a {
+  display: block;
+  padding: 5px 10px;
+  border-left: 2px solid var(--rule);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .84rem;
+  line-height: 1.45;
+}
+.toc-list a:hover { color: var(--ink); border-left-color: var(--muted); }
+.toc-list a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+
+/* ---------- prose ---------- */
+.prose { max-width: 780px; min-width: 0; }
+.prose h1 { font: 700 clamp(1.7rem, 4vw, 2.3rem)/1.15 var(--display); margin: 0 0 12px; text-wrap: balance; }
+.prose h2 {
+  font: 700 1.45rem/1.25 var(--display);
+  margin: 0 0 14px;
+  padding-top: 8px;
+  text-wrap: balance;
+}
+.prose h3 { font: 600 1.1rem/1.35 var(--display); margin: 32px 0 10px; color: var(--ink); }
+.prose h2, .prose h3 { scroll-margin-top: calc(var(--header-h) + 20px); }
+.prose p { margin: 0 0 14px; }
+.prose ul, .prose ol { margin: 0 0 16px; padding-left: 1.4em; }
+.prose li { margin: 4px 0; }
+.prose li > ul, .prose li > ol { margin: 4px 0 0; }
+.prose a { color: var(--accent); text-underline-offset: 3px; }
+.prose strong { font-weight: 600; }
+.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 48px 0 40px; }
+.prose code {
+  font: .86em/1 var(--mono);
+  background: var(--inline-code-bg);
+  padding: .18em .4em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+  font-variant-ligatures: none;
+}
+.file-ref { font: .86em var(--mono); color: var(--accent); }
+.prose blockquote {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  background: var(--accent-soft);
+  border-radius: 8px;
+  color: var(--ink);
+}
+.prose blockquote p { margin: 0; }
+
+/* code blocks */
+.code {
+  position: relative;
+  margin: 0 0 18px;
+  background: var(--code-bg);
+  border-radius: 10px;
+  border: 1px solid var(--code-rule);
+}
+.code pre { margin: 0; padding: 16px 18px; overflow-x: auto; }
+.code code {
+  background: none;
+  padding: 0;
+  color: var(--code-ink);
+  font: 13.5px/1.65 var(--mono);
+  white-space: pre;
+  overflow-wrap: normal;
+  font-variant-ligatures: none;
+}
+.code-lang {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font: 600 .66rem/1 var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--t-comment);
+  pointer-events: none;
+}
+.t-comment { color: var(--t-comment); }
+.t-string { color: var(--t-string); }
+.t-number { color: var(--t-number); }
+.t-kw { color: var(--t-kw); }
+.t-bi { color: var(--t-bi); }
+.t-fn { color: var(--t-fn); }
+
+/* tables */
+.table-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 .78rem/1.3 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: color-mix(in srgb, var(--paper) 60%, var(--surface)); }
+tbody tr:last-child td { border-bottom: 0; }
+td:first-child { font-variant-numeric: tabular-nums; }
+
+/* details: hints, answers, full code */
+.prose details {
+  margin: 0 0 18px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.prose details > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font: 600 .9rem/1.4 var(--display);
+  letter-spacing: .01em;
+  color: var(--accent);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prose details > summary::-webkit-details-marker { display: none; }
+.prose details > summary::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s;
+  flex: none;
+}
+.prose details[open] > summary::before { transform: rotate(45deg); }
+.prose details[open] > summary { border-bottom: 1px solid var(--rule); }
+.prose details > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.prose details > :nth-child(2) { margin-top: 14px; }
+.prose details > :last-child { margin-bottom: 16px; }
+.prose details.full-code > .code { margin: 0; border-radius: 0 0 10px 10px; border: 0; }
+.prose details.full-code summary code { font-size: .8rem; }
+
+/* theory: each question as a row */
+#panel-theory h3 { margin: 26px 0 8px; font-size: 1.02rem; }
+#panel-theory details > summary { font-size: .82rem; padding: 7px 12px; }
+.theory-tools { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
+.theory-tools button {
+  font: 600 .82rem/1 var(--display);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* problem meta line + bug markers */
+.prose p:has(> strong:first-child + code) { color: var(--muted); font-size: .9rem; }
+.bug { color: var(--hot); font-weight: 600; }
+
+.panel[hidden], .toc[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  :root { --header-h: 150px; }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 20px; }
+  .toc { position: static; max-height: none; }
+  .toc-list { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+  .toc-list a { border: 1px solid var(--rule); border-radius: 999px; padding: 4px 11px; white-space: nowrap; background: var(--surface); }
+  .masthead-inner { grid-template-columns: 1fr; padding-inline: 16px; }
+  .timer { grid-row: auto; grid-column: 1; flex-wrap: wrap; }
+  .layout { padding-inline: 16px; }
+}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <h1>ซ้อม Live Coding <span class="go">Go</span></h1>
+      <p>14 โจทย์ + เฉลย · 50 คำถามทฤษฎี · อ้างอิง roadmap.sh</p>
+    </div>
+    <div class="timer" id="timer" role="group" aria-label="ตัวจับเวลา">
+      <span class="timer-display" id="timer-display" aria-live="polite">15:00</span>
+      <select id="timer-preset" aria-label="ตั้งเวลา">
+        <option value="10">10 นาที</option>
+        <option value="15" selected>15 นาที</option>
+        <option value="20">20 นาที</option>
+        <option value="25">25 นาที</option>
+        <option value="30">30 นาที</option>
+      </select>
+      <button type="button" class="primary" id="timer-toggle">เริ่ม</button>
+      <button type="button" id="timer-reset">รีเซ็ต</button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="ส่วนของเนื้อหา">
+<button type="button" role="tab" class="tab" id="tab-problems" data-tab="problems" aria-controls="panel-problems">โจทย์</button>
+<button type="button" role="tab" class="tab" id="tab-solutions" data-tab="solutions" aria-controls="panel-solutions">เฉลย</button>
+<button type="button" role="tab" class="tab" id="tab-theory" data-tab="theory" aria-controls="panel-theory">ทฤษฎี 50 ข้อ</button>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+  <div class="toc-col">
+<nav class="toc" data-toc="problems" aria-label="สารบัญ โจทย์"><p class="toc-title">สารบัญ</p><ol class="toc-list"><li><a href="#problems-วิธีใช้">วิธีใช้</a></li><li><a href="#problems-ข้อ-01-ตัวแปร-type-conversion-string-rune">ข้อ 01 — ตัวแปร, Type Conversion, String/Rune</a></li><li><a href="#problems-ข้อ-02-pointer-และ-pointer-receiver">ข้อ 02 — Pointer และ Pointer Receiver</a></li><li><a href="#problems-ข้อ-03-slice-map-sort">ข้อ 03 — Slice, Map, Sort</a></li><li><a href="#problems-ข้อ-04-struct-interface-polymorphism">ข้อ 04 — Struct, Interface, Polymorphism</a></li><li><a href="#problems-ข้อ-05-error-handling-และ-custom-error">ข้อ 05 — Error Handling และ Custom Error</a></li><li><a href="#problems-ข้อ-06-json-และ-struct-tags">ข้อ 06 — JSON และ Struct Tags</a></li><li><a href="#problems-ข้อ-07-worker-pool">ข้อ 07 — Worker Pool</a></li><li><a href="#problems-ข้อ-08-race-condition-และ-mutex">ข้อ 08 — Race Condition และ Mutex</a></li><li><a href="#problems-ข้อ-09-pipeline-fan-in-และ-goroutine-leak">ข้อ 09 — Pipeline, Fan-in และ Goroutine Leak</a></li><li><a href="#problems-ข้อ-10-timeout-ด้วย-context">ข้อ 10 — Timeout ด้วย Context</a></li><li><a href="#problems-ข้อ-11-lru-cache-generics">ข้อ 11 — LRU Cache (Generics)</a></li><li><a href="#problems-ข้อ-12-เขียน-test-หาบั๊ก">ข้อ 12 — เขียน Test หาบั๊ก</a></li><li><a href="#problems-ข้อ-13-ใช้-memory-อย่างมีประสิทธิภาพ">ข้อ 13 — ใช้ Memory อย่างมีประสิทธิภาพ</a></li><li><a href="#problems-ข้อ-14-rest-api-ด้วย-net-http">ข้อ 14 — REST API ด้วย net/http</a></li></ol></nav>
+<nav class="toc" data-toc="solutions" aria-label="สารบัญ เฉลย"><p class="toc-title">สารบัญ</p><ol class="toc-list"><li><a href="#solutions-ข้อ-01-ตัวแปร-type-conversion-string-rune">ข้อ 01 — ตัวแปร, Type Conversion, String/Rune</a></li><li><a href="#solutions-ข้อ-02-pointer-และ-pointer-receiver">ข้อ 02 — Pointer และ Pointer Receiver</a></li><li><a href="#solutions-ข้อ-03-slice-map-sort">ข้อ 03 — Slice, Map, Sort</a></li><li><a href="#solutions-ข้อ-04-struct-interface-polymorphism">ข้อ 04 — Struct, Interface, Polymorphism</a></li><li><a href="#solutions-ข้อ-05-error-handling-และ-custom-error">ข้อ 05 — Error Handling และ Custom Error</a></li><li><a href="#solutions-ข้อ-06-json-และ-struct-tags">ข้อ 06 — JSON และ Struct Tags</a></li><li><a href="#solutions-ข้อ-07-worker-pool">ข้อ 07 — Worker Pool</a></li><li><a href="#solutions-ข้อ-08-race-condition-และ-mutex">ข้อ 08 — Race Condition และ Mutex</a></li><li><a href="#solutions-ข้อ-09-pipeline-fan-in-และ-goroutine-leak">ข้อ 09 — Pipeline, Fan-in และ Goroutine Leak</a></li><li><a href="#solutions-ข้อ-10-timeout-ด้วย-context">ข้อ 10 — Timeout ด้วย Context</a></li><li><a href="#solutions-ข้อ-11-lru-cache-generics">ข้อ 11 — LRU Cache (Generics)</a></li><li><a href="#solutions-ข้อ-12-เขียน-test-หาบั๊ก">ข้อ 12 — เขียน Test หาบั๊ก</a></li><li><a href="#solutions-ข้อ-13-ใช้-memory-อย่างมีประสิทธิภาพ">ข้อ 13 — ใช้ Memory อย่างมีประสิทธิภาพ</a></li><li><a href="#solutions-ข้อ-14-rest-api-ด้วย-net-http">ข้อ 14 — REST API ด้วย net/http</a></li></ol></nav>
+<nav class="toc" data-toc="theory" aria-label="สารบัญ ทฤษฎี 50 ข้อ"><p class="toc-title">สารบัญ</p><ol class="toc-list"><li><a href="#theory-ระดับเริ่มต้น-beginner">ระดับเริ่มต้น (Beginner)</a></li><li><a href="#theory-ระดับกลาง-intermediate">ระดับกลาง (Intermediate)</a></li><li><a href="#theory-ระดับสูง-advanced">ระดับสูง (Advanced)</a></li></ol></nav>
+  </div>
+  <div class="panels">
+<article class="panel prose" id="panel-problems" data-panel="problems"><h1 id="problems-โจทย์ฝึก-live-coding-golang-developer">โจทย์ฝึก Live Coding — Golang Developer</h1>
+<p>ชุดโจทย์ 14 ข้อ ออกแบบจากหัวข้อใน <a href="https://roadmap.sh/questions/golang" target="_blank" rel="noopener">roadmap.sh/questions/golang</a> เรียงจากง่ายไปยาก แต่ละข้อมี test เตรียมไว้แล้ว หน้าที่ของคุณคือเขียนโค้ดให้ test ผ่าน</p>
+<h2 id="problems-วิธีใช้">วิธีใช้</h2>
+<div class="code"><span class="code-lang">bash</span><pre><code>make test N=01        <span class="t-comment"># รัน test ของข้อ 01 (โฟลเดอร์ exercises/01_*)</span>
+make solution N=01    <span class="t-comment"># ดูว่าเฉลยผ่าน test อะไรบ้าง</span>
+make reset N=01       <span class="t-comment"># ล้างโค้ดที่เขียนไป กลับเป็นโจทย์เริ่มต้น</span>
+make test-all         <span class="t-comment"># รันทุกข้อ</span></code></pre></div>
+<blockquote><p><strong>กติกาแนะนำ:</strong> จับเวลาตามที่แต่ละข้อกำหนด พูดความคิดออกมาดัง ๆ ขณะเขียน (แบบสัมภาษณ์จริง)<br>อย่าเปิดเฉลย (<span class="file-ref">SOLUTIONS.md</span> / <code>solutions/</code>) จนกว่าจะทำเสร็จหรือหมดเวลา</p></blockquote>
+<div class="table-wrap"><table><thead><tr><th>ข้อ</th><th>หัวข้อ</th><th>ระดับ</th><th>เวลา</th><th>คำถาม roadmap ที่เกี่ยวข้อง</th></tr></thead><tbody><tr><td>01</td><td>ตัวแปร, type conversion, string/rune</td><td>ง่าย</td><td>10 นาที</td><td>3, 4, 12, 14, 34, 41</td></tr><tr><td>02</td><td>Pointer และ pointer receiver</td><td>ง่าย</td><td>10 นาที</td><td>5, 10, 11, 24, 43, 49</td></tr><tr><td>03</td><td>Slice, map, sort</td><td>ง่าย</td><td>15 นาที</td><td>6, 13</td></tr><tr><td>04</td><td>Struct, interface, polymorphism</td><td>ง่าย</td><td>15 นาที</td><td>17, 21, 23, 31, 42</td></tr><tr><td>05</td><td>Error handling และ custom error</td><td>กลาง</td><td>15 นาที</td><td>22, 29, 33, 44</td></tr><tr><td>06</td><td>JSON และ struct tags</td><td>กลาง</td><td>15 นาที</td><td>14, 19</td></tr><tr><td>07</td><td>Worker pool (goroutine + channel)</td><td>กลาง</td><td>20 นาที</td><td>25, 30, 40, 45</td></tr><tr><td>08</td><td>Race condition และ Mutex</td><td>กลาง</td><td>10 นาที</td><td>18, 48</td></tr><tr><td>09</td><td>Pipeline, fan-in, กัน goroutine leak</td><td>ยาก</td><td>25 นาที</td><td>30, 37, 40</td></tr><tr><td>10</td><td>Timeout ด้วย context</td><td>ยาก</td><td>20 นาที</td><td>25, 30, 37</td></tr><tr><td>11</td><td>LRU Cache แบบ generics</td><td>ยาก</td><td>25 นาที</td><td>13, 46</td></tr><tr><td>12</td><td>เขียน test หาบั๊ก</td><td>กลาง</td><td>15 นาที</td><td>8, 35</td></tr><tr><td>13</td><td>ใช้ memory อย่างมีประสิทธิภาพ</td><td>กลาง</td><td>15 นาที</td><td>9, 15, 16, 32, 36, 37, 46</td></tr><tr><td>14</td><td>REST API ด้วย net/http</td><td>ยาก</td><td>30 นาที</td><td>19, 22, 25</td></tr></tbody></table></div>
+<p>คำถามทฤษฎีทั้ง 50 ข้อพร้อมคำตอบภาษาไทยอยู่ใน <span class="file-ref">THEORY.md</span></p>
+<hr>
+<h2 id="problems-ข้อ-01-ตัวแปร-type-conversion-string-rune">ข้อ 01 — ตัวแปร, Type Conversion, String/Rune</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/01_basics/basics.go</code> · <strong>ระดับ:</strong> ง่าย · <strong>เวลา:</strong> 10 นาที</p>
+<p>เขียนฟังก์ชันต่อไปนี้</p>
+<ol><li><code>SumStrings(items []string) (int, error)</code> แปลงข้อความทุกตัวเป็น <code>int</code> แล้วรวมกัน<ul><li>ตัด space หัวท้ายก่อนแปลง เช่น <code>&quot; 2 &quot;</code> ให้ได้ <code>2</code></li><li>ถ้าตัวไหนแปลงไม่ได้ ให้คืน error ที่มีข้อความ <code>index &lt;i&gt;</code> <strong>และ wrap error เดิมไว้</strong> (caller ต้องใช้ <code>errors.As</code> หา <code>*strconv.NumError</code> ได้)</li></ul></li><li><code>Average(nums []int) (float64, error)</code> หาค่าเฉลี่ย ถ้า slice ว่างให้คืน <code>ErrEmpty</code></li><li><code>Reverse(s string) string</code> กลับลำดับตัวอักษร ต้องรองรับภาษาไทยและ emoji</li><li><code>CharCount(s string) (bytes, runes int)</code> คืนจำนวน byte และจำนวนตัวอักษร</li></ol>
+<p><strong>ตัวอย่าง</strong></p>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-fn">SumStrings</span>([]<span class="t-bi">string</span>{<span class="t-string">&quot;1&quot;</span>, <span class="t-string">&quot; 2 &quot;</span>, <span class="t-string">&quot;39&quot;</span>}) <span class="t-comment">// 42, nil</span>
+<span class="t-fn">SumStrings</span>([]<span class="t-bi">string</span>{<span class="t-string">&quot;1&quot;</span>, <span class="t-string">&quot;2&quot;</span>, <span class="t-string">&quot;abc&quot;</span>})  <span class="t-comment">// 0, &quot;index 2: strconv.Atoi: ...&quot;</span>
+<span class="t-fn">Average</span>([]<span class="t-bi">int</span>{<span class="t-number">1</span>, <span class="t-number">2</span>})                   <span class="t-comment">// 1.5, nil   (ไม่ใช่ 1!)</span>
+<span class="t-fn">Reverse</span>(<span class="t-string">&quot;Go🚀&quot;</span>)                         <span class="t-comment">// &quot;🚀oG&quot;</span>
+<span class="t-fn">CharCount</span>(<span class="t-string">&quot;สวัสดี&quot;</span>)                     <span class="t-comment">// 18, 6</span></code></pre></div>
+<details><summary>💡 Hint</summary>
+<ul><li><code>strconv.Atoi</code>, <code>strings.TrimSpace</code>, <code>fmt.Errorf(&quot;...: %w&quot;, err)</code></li><li><code>int / int</code> ได้ <code>int</code> ต้องแปลงเป็น <code>float64</code> ก่อนหาร</li><li><code>string</code> คือ byte sequence (UTF-8) ใช้ <code>[]rune(s)</code> หรือ <code>utf8.RuneCountInString</code></li></ul>
+</details>
+<p><strong>คำถามต่อยอดที่ interviewer อาจถาม:</strong> zero value ของ <code>string</code>, <code>slice</code>, <code>map</code>, <code>pointer</code> คืออะไร? / <code>var x int</code> ต่างจาก <code>x := 0</code> ยังไง?</p>
+<hr>
+<h2 id="problems-ข้อ-02-pointer-และ-pointer-receiver">ข้อ 02 — Pointer และ Pointer Receiver</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/02_pointers/pointers.go</code> · <strong>ระดับ:</strong> ง่าย · <strong>เวลา:</strong> 10 นาที</p>
+<p>⚠️ โค้ดตั้งต้นมี <strong>บั๊กที่จงใจใส่ไว้ 2 จุด</strong> ให้หาสาเหตุ อธิบาย แล้วแก้</p>
+<ol><li><code>Swap(a, b *int)</code> สลับค่าที่ pointer สองตัวชี้อยู่</li><li><code>(*Account).Deposit(amount int) error</code> ฝากเงิน (<code>amount &lt;= 0</code> → <code>ErrInvalidAmount</code>) <strong>บั๊ก:</strong> ฝากแล้วยอดเงินไม่เปลี่ยน</li><li><code>(*Account).Withdraw(amount int) error</code> ถอนเงิน <code>amount &lt;= 0</code> → <code>ErrInvalidAmount</code>, เงินไม่พอ → <code>ErrInsufficientFunds</code></li><li><code>Transfer(from, to *Account, amount int) error</code> โอนเงิน ถ้าไม่สำเร็จ <strong>ห้ามมีบัญชีไหนเปลี่ยน</strong></li><li><code>ApplyBonus(accounts []Account, bonus int)</code> บวก bonus ให้ทุกบัญชี <strong>บั๊ก:</strong> รันแล้วไม่มีใครได้ bonus</li></ol>
+<details><summary>💡 Hint</summary>
+<ul><li>Value receiver <code>(a Account)</code> ได้ <strong>สำเนา</strong> ของ struct</li><li><code>for _, a := range accounts</code> ตัว <code>a</code> ก็เป็น <strong>สำเนา</strong> เหมือนกัน</li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> เมื่อไหร่ควรใช้ pointer receiver? / ถ้า method หนึ่งเป็น pointer receiver ควรทำให้ทุก method เป็นแบบเดียวกันไหม? / return pointer ของตัวแปร local ได้ไหม (escape analysis)?</p>
+<hr>
+<h2 id="problems-ข้อ-03-slice-map-sort">ข้อ 03 — Slice, Map, Sort</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/03_collections/collections.go</code> · <strong>ระดับ:</strong> ง่าย · <strong>เวลา:</strong> 15 นาที</p>
+<ol><li><code>WordFrequency(text string) map[string]int</code> นับความถี่ของคำ โดยไม่สนตัวพิมพ์เล็ก/ใหญ่ "คำ" คือกลุ่มตัวอักษรหรือตัวเลขที่อยู่ติดกัน ตัวอื่นทั้งหมดถือเป็นตัวคั่น</li><li><code>TopK(freq map[string]int, k int) []string</code> คืน k คำที่พบบ่อยที่สุด เรียงจากมากไปน้อย ถ้าจำนวนเท่ากันให้เรียง a→z</li><li><code>Unique(nums []int) []int</code> ลบตัวซ้ำโดยคงลำดับเดิม</li><li><code>Chunk(nums []int, size int) [][]int</code> แบ่ง slice เป็นก้อนละ <code>size</code> ตัว (<code>size &lt;= 0</code> → <code>nil</code>) <strong>เงื่อนไขพิเศษ:</strong> ถ้า <code>append</code> เพิ่มลง chunk แรก ต้องไม่ไปทับข้อมูลของ chunk ที่สอง</li></ol>
+<p><strong>ตัวอย่าง</strong></p>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-fn">WordFrequency</span>(<span class="t-string">&quot;Go is fun. go, GO! Is it?&quot;</span>) <span class="t-comment">// map[go:3 is:2 fun:1 it:1]</span>
+<span class="t-fn">TopK</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>{<span class="t-string">&quot;go&quot;</span>:<span class="t-number">3</span>,<span class="t-string">&quot;is&quot;</span>:<span class="t-number">2</span>,<span class="t-string">&quot;fun&quot;</span>:<span class="t-number">2</span>,<span class="t-string">&quot;it&quot;</span>:<span class="t-number">1</span>}, <span class="t-number">3</span>) <span class="t-comment">// [go fun is]</span>
+<span class="t-fn">Unique</span>([]<span class="t-bi">int</span>{<span class="t-number">3</span>, <span class="t-number">1</span>, <span class="t-number">3</span>, <span class="t-number">2</span>, <span class="t-number">1</span>, <span class="t-number">5</span>})           <span class="t-comment">// [3 1 2 5]</span>
+<span class="t-fn">Chunk</span>([]<span class="t-bi">int</span>{<span class="t-number">1</span>, <span class="t-number">2</span>, <span class="t-number">3</span>, <span class="t-number">4</span>, <span class="t-number">5</span>}, <span class="t-number">2</span>)            <span class="t-comment">// [[1 2] [3 4] [5]]</span></code></pre></div>
+<details><summary>💡 Hint</summary>
+<ul><li><code>strings.FieldsFunc</code>, <code>unicode.IsLetter</code>, <code>unicode.IsDigit</code></li><li>การวนลูป map <strong>ไม่มีลำดับ</strong> ต้อง sort เอง (<code>sort.Slice</code> หรือ <code>slices.SortFunc</code>)</li><li><code>map[int]struct{}</code> ใช้เป็น set</li><li>full slice expression: <code>s[low:high:max]</code></li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> slice ต่างจาก array ยังไง? / <code>len</code> กับ <code>cap</code> คืออะไร? / map thread-safe ไหม?</p>
+<hr>
+<h2 id="problems-ข้อ-04-struct-interface-polymorphism">ข้อ 04 — Struct, Interface, Polymorphism</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/04_interfaces/shapes.go</code> · <strong>ระดับ:</strong> ง่าย · <strong>เวลา:</strong> 15 นาที</p>
+<p>มี interface <code>Shape { Area() float64; Perimeter() float64 }</code> และ struct <code>Rectangle{Width, Height}</code>, <code>Circle{Radius}</code></p>
+<ol><li>เขียน <code>Area()</code> และ <code>Perimeter()</code> ของทั้งสอง struct ให้ถูกต้อง</li><li><code>TotalArea(shapes ...Shape) float64</code> รวมพื้นที่ รับกี่ตัวก็ได้ (variadic)</li><li><code>Largest(shapes []Shape) (Shape, bool)</code> คืน shape ที่ใหญ่ที่สุด ถ้า slice ว่างให้คืน <code>nil, false</code></li><li><code>Describe(s Shape) string</code> ใช้ <strong>type switch</strong><ul><li><code>Rectangle{2,3}</code> → <code>&quot;rectangle 2x3&quot;</code></li><li><code>Circle{1.5}</code> → <code>&quot;circle r=1.5&quot;</code></li><li>type อื่น → <code>&quot;unknown shape&quot;</code></li></ul></li></ol>
+<details><summary>💡 Hint</summary>
+<ul><li>Go implement interface แบบ implicit: แค่มี method ครบก็ใช้ได้</li><li><code>switch v := s.(type) { case Rectangle: ... }</code></li><li><code>%g</code> ใน <code>fmt.Sprintf</code> จะตัดศูนย์ท้ายทศนิยมทิ้ง</li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> Go มี method overloading ไหม? ถ้าไม่มีใช้อะไรแทน? / <code>var _ Shape = Rectangle{}</code> มีไว้ทำอะไร? / interface ที่เป็น nil ต่างจาก interface ที่ข้างในเก็บ nil pointer ยังไง?</p>
+<hr>
+<h2 id="problems-ข้อ-05-error-handling-และ-custom-error">ข้อ 05 — Error Handling และ Custom Error</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/05_errors/store.go</code> · <strong>ระดับ:</strong> กลาง · <strong>เวลา:</strong> 15 นาที</p>
+<p>สร้าง in-memory user store</p>
+<ol><li><code>(*ValidationError).Error()</code> ต้องคืนข้อความรูปแบบ <code>validation failed on &lt;Field&gt;: &lt;Msg&gt;</code></li><li><code>NewStore()</code> และออกแบบ field ของ <code>Store</code> เอง</li><li><code>Create(name, email string) (User, error)</code> ID เริ่มที่ 1 แล้วเพิ่มทีละ 1<ul><li>name ว่าง (หลัง trim) → <code>*ValidationError{Field: &quot;name&quot;}</code></li><li>email ไม่มี <code>@</code> → <code>*ValidationError{Field: &quot;email&quot;}</code></li><li>email ซ้ำ → error ที่ <strong>wrap</strong> <code>ErrDuplicateEmail</code></li></ul></li><li><code>Get(id int) (User, error)</code> ไม่เจอให้คืน error ที่ <strong>wrap</strong> <code>ErrNotFound</code> และมี id อยู่ในข้อความ</li></ol>
+<p>test จะตรวจด้วย <code>errors.Is(err, ErrNotFound)</code> และ <code>errors.As(err, &amp;ve)</code></p>
+<details><summary>💡 Hint</summary>
+<ul><li><code>fmt.Errorf(&quot;get user %d: %w&quot;, id, ErrNotFound)</code></li><li>คืน <code>&amp;ValidationError{...}</code> (pointer) เพราะ method <code>Error()</code> เป็น pointer receiver</li><li>ใช้ map เพิ่มอีกตัว index ด้วย email เพื่อตรวจซ้ำแบบ O(1)</li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> <code>errors.Is</code> กับ <code>errors.As</code> ต่างกันยังไง? / ทำไม Go ไม่มี exception? / <code>panic</code> ควรใช้เมื่อไหร่?</p>
+<hr>
+<h2 id="problems-ข้อ-06-json-และ-struct-tags">ข้อ 06 — JSON และ Struct Tags</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/06_json/orders.go</code> · <strong>ระดับ:</strong> กลาง · <strong>เวลา:</strong> 15 นาที</p>
+<p>รูปแบบ JSON ของ order:</p>
+<div class="code"><span class="code-lang">json</span><pre><code>{
+  &quot;id&quot;: &quot;A001&quot;,
+  &quot;customer_name&quot;: &quot;Tah&quot;,
+  &quot;items&quot;: [{&quot;sku&quot;: &quot;KB-01&quot;, &quot;qty&quot;: 2, &quot;price&quot;: 10.5}],
+  &quot;note&quot;: &quot;optional&quot;
+}</code></pre></div>
+<ol><li>เพิ่ม <strong>struct tag</strong> ให้ <code>Item</code> และ <code>Order</code> ตรงกับ JSON ข้างบน ถ้า <code>note</code> ว่างต้อง<strong>ไม่มี</strong> key <code>&quot;note&quot;</code> ตอน marshal</li><li><code>(Order).Total() float64</code> = ผลรวม <code>Qty * Price</code></li><li><code>ParseOrder(data []byte) (Order, error)</code> JSON ผิดรูปแบบ → error, ไม่มี <code>id</code> → <code>ErrMissingID</code></li><li><code>Summarize(data []byte) ([]byte, error)</code> รับ JSON array ของ orders แล้วคืน JSON: <code>{&quot;count&quot;: 3, &quot;revenue&quot;: 28.5, &quot;by_customer&quot;: {&quot;Tah&quot;: 23, &quot;Bee&quot;: 5.5}}</code></li></ol>
+<details><summary>💡 Hint</summary>
+<ul><li><code>`json:&quot;customer_name&quot;`</code>, <code>`json:&quot;note,omitempty&quot;`</code></li><li><code>json.Unmarshal(data, &amp;v)</code> และ <code>json.Marshal(v)</code></li><li>field ต้องขึ้นต้นด้วยตัวพิมพ์ใหญ่ (exported) json ถึงจะมองเห็น</li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> ถ้า JSON ใหญ่มาก (เช่น 1GB) จะอ่านยังไง? (<code>json.Decoder</code> แบบ stream) / unmarshal ลง <code>map[string]any</code> ตัวเลขจะเป็น type อะไร?</p>
+<hr>
+<h2 id="problems-ข้อ-07-worker-pool">ข้อ 07 — Worker Pool</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/07_workerpool/workerpool.go</code> · <strong>ระดับ:</strong> กลาง · <strong>เวลา:</strong> 20 นาที</p>
+<p><code>ParallelMap(nums []int, workers int, fn func(int) int) []int</code></p>
+<ul><li>เรียก <code>fn</code> กับทุกตัวใน <code>nums</code> โดยมี goroutine ทำงานพร้อมกัน <strong>ไม่เกิน</strong> <code>workers</code> ตัว</li><li>ผลลัพธ์ต้อง<strong>เรียงตามลำดับเดิม</strong></li><li>ต้องผ่าน <code>go test -race</code></li></ul>
+<p>test จะวัดว่า 8 งาน งานละ 50ms ใช้ 4 workers ต้องเสร็จเร็ว (ประมาณ 100ms) และต้องไม่มีงานรันพร้อมกันเกิน 4 ตัว</p>
+<details><summary>💡 Hint</summary>
+<ul><li>ส่ง <strong>index</strong> ของงานผ่าน channel แล้วให้ worker เขียนผลลง <code>results[i]</code></li><li>ใช้ <code>close(jobs)</code> บอก worker ว่าหมดงาน และ <code>sync.WaitGroup</code> รอทุก worker จบ</li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> goroutine ต่างจาก OS thread ยังไง? / buffered กับ unbuffered channel ต่างกันยังไง? / ถ้า <code>fn</code> อาจ panic จะทำยังไง? / ถ้าต้องคืน error ด้วยล่ะ (<code>errgroup</code>)?</p>
+<hr>
+<h2 id="problems-ข้อ-08-race-condition-และ-mutex">ข้อ 08 — Race Condition และ Mutex</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/08_mutex/counter.go</code> · <strong>ระดับ:</strong> กลาง · <strong>เวลา:</strong> 10 นาที</p>
+<p><code>Counter</code> ตัวนี้พังเมื่อถูกเรียกจากหลาย goroutine (<code>fatal error: concurrent map writes</code>)</p>
+<ol><li>แก้ให้ <code>Inc</code> และ <code>Value</code> ปลอดภัยเมื่อใช้พร้อมกัน</li><li>แก้ <code>Snapshot()</code> ให้คืน<strong>สำเนา</strong> ถ้าผู้เรียกแก้ map ที่ได้คืนไป ต้องไม่กระทบ Counter</li></ol>
+<p>ลองรัน <code>go test -race ./exercises/08_mutex</code> ทั้งก่อนและหลังแก้</p>
+<details><summary>💡 Hint</summary>
+<p><code>sync.Mutex</code> + <code>defer c.mu.Unlock()</code> (zero value ของ Mutex ใช้ได้เลย ไม่ต้อง init)</p>
+</details>
+<p><strong>คำถามต่อยอด:</strong> <code>sync.Mutex</code> กับ <code>sync.RWMutex</code> ต่างกันยังไง? / ใช้ <code>sync.Map</code> หรือ <code>atomic</code> แทนได้ไหม? / ทำไมห้าม copy struct ที่มี Mutex (<code>go vet</code> เตือนเรื่องอะไร)?</p>
+<hr>
+<h2 id="problems-ข้อ-09-pipeline-fan-in-และ-goroutine-leak">ข้อ 09 — Pipeline, Fan-in และ Goroutine Leak</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/09_pipeline/pipeline.go</code> · <strong>ระดับ:</strong> ยาก · <strong>เวลา:</strong> 25 นาที</p>
+<p><code>Generate</code> และ <code>Square</code> ในโค้ดตั้งต้นให้ผลถูกต้อง แต่ถ้าผู้อ่าน<strong>เลิกอ่านกลางทาง</strong> goroutine จะค้างตลอดไป (goroutine leak)</p>
+<ol><li>แก้ <code>Generate(ctx, nums...)</code> และ <code>Square(ctx, in)</code> ให้หยุดทันทีเมื่อ <code>ctx</code> ถูก cancel</li><li>เขียน <code>Merge(ctx, cs ...&lt;-chan int) &lt;-chan int</code> (fan-in) รวมหลาย channel เป็นช่องเดียว ต้อง close channel ผลลัพธ์เมื่อ input <strong>ทุกตัว</strong> ถูก close แล้ว</li></ol>
+<div class="code"><span class="code-lang">go</span><pre><code>src := <span class="t-fn">Generate</span>(ctx, <span class="t-number">1</span>, <span class="t-number">2</span>, ..., <span class="t-number">10</span>)
+<span class="t-comment">// fan-out: 3 workers อ่านจาก src เดียวกัน → fan-in ด้วย Merge</span>
+out := <span class="t-fn">Merge</span>(ctx, <span class="t-fn">Square</span>(ctx, src), <span class="t-fn">Square</span>(ctx, src), <span class="t-fn">Square</span>(ctx, src))
+<span class="t-comment">// sum(out) == 385</span></code></pre></div>
+<details><summary>💡 Hint</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">select</span> {
+<span class="t-kw">case</span> out &lt;- n:
+<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():
+    <span class="t-kw">return</span>
+}</code></pre></div>
+<p>ใน <code>Merge</code> ให้แยก goroutine ที่ทำ <code>wg.Wait(); close(out)</code> ออกมา</p>
+</details>
+<p><strong>คำถามต่อยอด:</strong> จะตรวจหา goroutine leak ใน production ยังไง? (pprof goroutine profile, <code>goleak</code>) / ทำไมผู้ส่งควรเป็นคน close channel ไม่ใช่ผู้รับ?</p>
+<hr>
+<h2 id="problems-ข้อ-10-timeout-ด้วย-context">ข้อ 10 — Timeout ด้วย Context</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/10_timeout/timeout.go</code> · <strong>ระดับ:</strong> ยาก · <strong>เวลา:</strong> 20 นาที</p>
+<ol><li><code>CallWithTimeout(ctx, d, fn) (string, error)</code> เรียก <code>fn</code> แต่รอไม่เกิน <code>d</code><ul><li>ถ้าเกินเวลาต้องคืน error ที่ <code>errors.Is(err, context.DeadlineExceeded)</code></li><li><strong>ห้ามมี goroutine ค้าง</strong> แม้ <code>fn</code> จะไม่สนใจ ctx และทำงานต่อจนเสร็จหลัง timeout ไปแล้วก็ตาม</li></ul></li><li><code>FirstSuccess(ctx, fns...) (string, error)</code> รันทุก <code>fn</code> พร้อมกัน<ul><li>คืนผลของ<strong>ตัวแรกที่สำเร็จ</strong> แล้ว cancel ตัวที่เหลือ</li><li>ถ้าทุกตัวล้มเหลว คืน error ที่รวมทุก error (<code>errors.Is</code> ต้องเจอทุกตัว)</li><li>ไม่มี fn เลย → <code>ErrNoFuncs</code></li></ul></li></ol>
+<details><summary>💡 Hint</summary>
+<ul><li><code>context.WithTimeout</code> / <code>context.WithCancel</code> แล้ว <code>defer cancel()</code> เสมอ</li><li>ส่งผลลัพธ์ผ่าน <strong>buffered channel</strong> เพื่อให้ goroutine ส่งได้แม้ไม่มีใครรออ่าน</li><li><code>errors.Join(errs...)</code></li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> ทำไมต้อง <code>defer cancel()</code> ทุกครั้ง? / ควรส่ง <code>context.Context</code> เป็น parameter ตัวแรกเพราะอะไร? / ควรเก็บ ctx ไว้ใน struct ไหม?</p>
+<hr>
+<h2 id="problems-ข้อ-11-lru-cache-generics">ข้อ 11 — LRU Cache (Generics)</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/11_lru/lru.go</code> · <strong>ระดับ:</strong> ยาก · <strong>เวลา:</strong> 25 นาที</p>
+<p>เขียน <code>Cache[K comparable, V any]</code> ที่ <code>Get</code> และ <code>Put</code> เป็น <strong>O(1)</strong></p>
+<ul><li><code>New[K, V](capacity int) *Cache[K, V]</code></li><li><code>Get(key) (V, bool)</code> คืนค่าและทำให้ key นั้นเป็น "ใช้ล่าสุด"</li><li><code>Put(key, value)</code> เพิ่มหรืออัปเดตค่า (นับเป็นการใช้ล่าสุดด้วย) ถ้าเกิน capacity ให้ลบตัวที่<strong>ไม่ได้ใช้นานที่สุด</strong></li><li><code>Len() int</code></li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code>c := New[<span class="t-bi">string</span>, <span class="t-bi">int</span>](<span class="t-number">2</span>)
+c.<span class="t-fn">Put</span>(<span class="t-string">&quot;a&quot;</span>, <span class="t-number">1</span>); c.<span class="t-fn">Put</span>(<span class="t-string">&quot;b&quot;</span>, <span class="t-number">2</span>)
+c.<span class="t-fn">Get</span>(<span class="t-string">&quot;a&quot;</span>)      <span class="t-comment">// 1, true → a กลายเป็นใช้ล่าสุด</span>
+c.<span class="t-fn">Put</span>(<span class="t-string">&quot;c&quot;</span>, <span class="t-number">3</span>)   <span class="t-comment">// เกิน → เตะ b ออก</span>
+c.<span class="t-fn">Get</span>(<span class="t-string">&quot;b&quot;</span>)      <span class="t-comment">// 0, false</span></code></pre></div>
+<details><summary>💡 Hint</summary>
+<p><code>map[K]*list.Element</code> + <code>container/list</code> (doubly linked list) หน้าสุดคือตัวที่ใช้ล่าสุด ท้ายสุดคือตัวที่จะถูกเตะ อย่าลืมลบ key ออกจาก map ตอนเตะด้วย</p>
+</details>
+<p><strong>คำถามต่อยอด:</strong> ทำให้ thread-safe ยังไง? / เพิ่ม TTL ยังไง? / <code>comparable</code> กับ <code>any</code> ต่างกันยังไง?</p>
+<hr>
+<h2 id="problems-ข้อ-12-เขียน-test-หาบั๊ก">ข้อ 12 — เขียน Test หาบั๊ก</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/12_testing/palindrome.go</code> และ <code>palindrome_test.go</code> · <strong>ระดับ:</strong> กลาง · <strong>เวลา:</strong> 15 นาที</p>
+<p><code>IsPalindrome(s string) bool</code> ต้องคืน <code>true</code> ถ้าอ่านจากหน้าไปหลังและหลังไปหน้าได้เหมือนกัน โดย<strong>ไม่สน</strong>ตัวพิมพ์เล็ก/ใหญ่ และ<strong>ข้าม</strong>ทุกอย่างที่ไม่ใช่ตัวอักษรหรือตัวเลข (รองรับ Unicode)</p>
+<p>โค้ดที่ให้มามี<strong>บั๊กอย่างน้อย 2 จุด</strong> และ test ตั้งต้นผ่าน (เพราะมีแค่เคสเดียว)</p>
+<ol><li>เขียน <strong>table-driven test</strong> ด้วย <code>t.Run</code> อย่างน้อย 8 เคส ให้จับบั๊กได้</li><li>แก้ <code>IsPalindrome</code> ให้ test ผ่าน</li><li>เขียน <code>BenchmarkIsPalindrome</code> และ <code>ExampleIsPalindrome</code></li><li>(โบนัส) เขียน <code>FuzzIsPalindrome</code></li></ol>
+<div class="code"><span class="code-lang">bash</span><pre><code>go test -v ./exercises/12_testing
+go test -bench=. -benchmem ./exercises/12_testing
+go test -fuzz=FuzzIsPalindrome -fuzztime=10s ./exercises/12_testing</code></pre></div>
+<p><strong>คำถามต่อยอด:</strong> จะ mock dependency (DB, HTTP) ใน Go ยังไง? / <code>t.Helper()</code>, <code>t.Cleanup()</code>, <code>t.Parallel()</code> ใช้ทำอะไร? / วัด coverage ยังไง?</p>
+<hr>
+<h2 id="problems-ข้อ-13-ใช้-memory-อย่างมีประสิทธิภาพ">ข้อ 13 — ใช้ Memory อย่างมีประสิทธิภาพ</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/13_memory/memory.go</code> · <strong>ระดับ:</strong> กลาง · <strong>เวลา:</strong> 15 นาที</p>
+<p>โค้ดตั้งต้นให้ผลถูกต้อง แต่ allocate memory เยอะเกินไป ให้ปรับจนผ่าน test ที่ใช้ <code>testing.AllocsPerRun</code></p>
+<ol><li><code>Squares(n int) []int</code> ต้อง allocate <strong>1 ครั้ง</strong></li><li><code>JoinInts(nums []int, sep string) string</code> ต้อง allocate <strong>ไม่เกิน 3 ครั้ง</strong> สำหรับ 100 ตัว (ของเดิมประมาณ 200 ครั้ง)</li><li><code>Head(data []byte, n int) []byte</code> ผลลัพธ์ต้อง<strong>ไม่แชร์ memory</strong> กับ <code>data</code> (ลองคิดดูว่า ถ้า <code>data</code> ใหญ่ 100MB แล้วเราเก็บไว้แค่ 10 byte แรกด้วย <code>data[:10]</code> จะเกิดอะไรขึ้น)</li></ol>
+<div class="code"><span class="code-lang">bash</span><pre><code>go test -bench=. -benchmem ./exercises/13_memory   <span class="t-comment"># ดู allocs/op</span></code></pre></div>
+<details><summary>💡 Hint</summary>
+<ul><li><code>make([]int, 0, n)</code></li><li><code>strings.Builder</code> + <code>Grow</code> + <code>strconv.AppendInt</code></li><li><code>make</code> แล้ว <code>copy</code></li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> stack กับ heap ต่างกันยังไง? escape analysis คืออะไร (<code>go build -gcflags=-m</code>)? / จะ profile memory ด้วย pprof ยังไง? / <code>sync.Pool</code> ใช้เมื่อไหร่?</p>
+<hr>
+<h2 id="problems-ข้อ-14-rest-api-ด้วย-net-http">ข้อ 14 — REST API ด้วย net/http</h2>
+<p><strong>ไฟล์:</strong> <code>exercises/14_http/server.go</code> · <strong>ระดับ:</strong> ยาก · <strong>เวลา:</strong> 30 นาที</p>
+<p>สร้าง Todo API แบบ in-memory โดยใช้แค่ standard library</p>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>สำเร็จ</th><th>กรณี error</th></tr></thead><tbody><tr><td>GET</td><td><code>/todos</code></td><td>200 + array เรียงตาม id (ว่าง = <code>[]</code> ไม่ใช่ <code>null</code>)</td><td>—</td></tr><tr><td>POST</td><td><code>/todos</code> body <code>{&quot;title&quot;:&quot;...&quot;}</code></td><td>201 + todo ที่สร้าง (id เริ่มที่ 1)</td><td>JSON พัง / title ว่าง → 400</td></tr><tr><td>GET</td><td><code>/todos/{id}</code></td><td>200 + todo</td><td>ไม่เจอ → 404, id ไม่ใช่ตัวเลข → 400</td></tr><tr><td>DELETE</td><td><code>/todos/{id}</code></td><td>204 (ไม่มี body)</td><td>ไม่เจอ → 404, id ไม่ใช่ตัวเลข → 400</td></tr></tbody></table></div>
+<ul><li>ทุก error ตอบเป็น <code>{&quot;error&quot;: &quot;...&quot;}</code></li><li>ทุก JSON response ต้องมี header <code>Content-Type: application/json</code></li><li>ต้องปลอดภัยเมื่อมี request เข้ามาพร้อมกัน</li></ul>
+<details><summary>💡 Hint</summary>
+<ul><li>Go 1.22+ : <code>mux.HandleFunc(&quot;GET /todos/{id}&quot;, h)</code> แล้วอ่านด้วย <code>r.PathValue(&quot;id&quot;)</code></li><li><code>json.NewDecoder(r.Body).Decode(&amp;in)</code></li><li><code>sync.RWMutex</code></li><li>nil slice ถูก encode เป็น <code>null</code> แต่ <code>make([]Todo, 0)</code> ได้ <code>[]</code></li></ul>
+</details>
+<p><strong>คำถามต่อยอด:</strong> จะเพิ่ม middleware (logging, auth) ยังไง? / graceful shutdown ทำยังไง? / จะตั้ง timeout ของ <code>http.Server</code> ตัวไหนบ้าง? / จะแยก layer handler/service/repository ยังไง?</p></article>
+<article class="panel prose" id="panel-solutions" data-panel="solutions"><h1 id="solutions-เฉลยและคำอธิบาย">เฉลยและคำอธิบาย</h1>
+<blockquote><p>โค้ดเฉลยฉบับเต็มอยู่ในโฟลเดอร์ <code>solutions/</code> (ทุกข้อผ่าน <code>go test -race ./solutions/...</code>)<br>ไฟล์นี้อธิบาย <strong>แนวคิด</strong>, <strong>จุดที่คนมักพลาด</strong> และ <strong>คำตอบของคำถามต่อยอด</strong></p></blockquote>
+<hr>
+<h2 id="solutions-ข้อ-01-ตัวแปร-type-conversion-string-rune">ข้อ 01 — ตัวแปร, Type Conversion, String/Rune</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/01_basics/basics.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package basics — เฉลยข้อ 1: ตัวแปร, zero value, type conversion, string/rune</span>
+<span class="t-kw">package</span> basics
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;errors&quot;</span>
+	<span class="t-string">&quot;fmt&quot;</span>
+	<span class="t-string">&quot;strconv&quot;</span>
+	<span class="t-string">&quot;strings&quot;</span>
+	<span class="t-string">&quot;unicode/utf8&quot;</span>
+)
+
+<span class="t-comment">// ErrEmpty ใช้เมื่อ input ว่าง (sentinel error)</span>
+<span class="t-kw">var</span> ErrEmpty = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;empty input&quot;</span>)
+
+<span class="t-comment">// SumStrings แปลงทุกตัวเป็น int แล้วรวมกัน</span>
+<span class="t-comment">// - ตัด space หัวท้ายก่อนแปลง</span>
+<span class="t-comment">// - ถ้าแปลงไม่ได้ ให้คืน error ที่มีคำว่า &quot;index &lt;i&gt;&quot; และ wrap error เดิมด้วย %w</span>
+<span class="t-kw">func</span> <span class="t-fn">SumStrings</span>(items []<span class="t-bi">string</span>) (<span class="t-bi">int</span>, <span class="t-bi">error</span>) {
+	total := <span class="t-number">0</span> <span class="t-comment">// zero value ของ int คือ 0 อยู่แล้ว แต่เขียนให้ชัด</span>
+	<span class="t-kw">for</span> i, s := <span class="t-kw">range</span> items {
+		n, err := strconv.<span class="t-fn">Atoi</span>(strings.<span class="t-fn">TrimSpace</span>(s))
+		<span class="t-kw">if</span> err != <span class="t-bi">nil</span> {
+			<span class="t-comment">// %w ทำให้ caller ใช้ errors.As หา *strconv.NumError ต่อได้</span>
+			<span class="t-kw">return</span> <span class="t-number">0</span>, fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;index %d: %w&quot;</span>, i, err)
+		}
+		total += n
+	}
+	<span class="t-kw">return</span> total, <span class="t-bi">nil</span>
+}
+
+<span class="t-comment">// Average คืนค่าเฉลี่ยแบบ float64 (ระวัง integer division!)</span>
+<span class="t-kw">func</span> <span class="t-fn">Average</span>(nums []<span class="t-bi">int</span>) (<span class="t-bi">float64</span>, <span class="t-bi">error</span>) {
+	<span class="t-kw">if</span> <span class="t-bi">len</span>(nums) == <span class="t-number">0</span> {
+		<span class="t-kw">return</span> <span class="t-number">0</span>, ErrEmpty
+	}
+	sum := <span class="t-number">0</span>
+	<span class="t-kw">for</span> _, n := <span class="t-kw">range</span> nums {
+		sum += n
+	}
+	<span class="t-comment">// ต้องแปลงเป็น float64 ก่อนหาร ไม่งั้น 3/2 = 1</span>
+	<span class="t-kw">return</span> <span class="t-bi">float64</span>(sum) / <span class="t-bi">float64</span>(<span class="t-bi">len</span>(nums)), <span class="t-bi">nil</span>
+}
+
+<span class="t-comment">// Reverse กลับลำดับตัวอักษร (ระดับ rune ไม่ใช่ byte)</span>
+<span class="t-kw">func</span> <span class="t-fn">Reverse</span>(s <span class="t-bi">string</span>) <span class="t-bi">string</span> {
+	r := []<span class="t-bi">rune</span>(s)
+	<span class="t-kw">for</span> i, j := <span class="t-number">0</span>, <span class="t-bi">len</span>(r)-<span class="t-number">1</span>; i &lt; j; i, j = i+<span class="t-number">1</span>, j-<span class="t-number">1</span> {
+		r[i], r[j] = r[j], r[i]
+	}
+	<span class="t-kw">return</span> <span class="t-bi">string</span>(r)
+}
+
+<span class="t-comment">// CharCount คืนจำนวน byte และจำนวน rune ของ s</span>
+<span class="t-kw">func</span> <span class="t-fn">CharCount</span>(s <span class="t-bi">string</span>) (bytes <span class="t-bi">int</span>, runes <span class="t-bi">int</span>) {
+	<span class="t-kw">return</span> <span class="t-bi">len</span>(s), utf8.<span class="t-fn">RuneCountInString</span>(s)
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิด">แนวคิด</h3>
+<div class="code"><span class="code-lang">go</span><pre><code>n, err := strconv.<span class="t-fn">Atoi</span>(strings.<span class="t-fn">TrimSpace</span>(s))
+<span class="t-kw">if</span> err != <span class="t-bi">nil</span> {
+    <span class="t-kw">return</span> <span class="t-number">0</span>, fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;index %d: %w&quot;</span>, i, err) <span class="t-comment">// %w = wrap</span>
+}</code></pre></div>
+<ul><li><strong><code>%w</code> กับ <code>%v</code> ต่างกัน:</strong> <code>%w</code> เก็บ error เดิมไว้ข้างใน ผู้เรียกจึงใช้ <code>errors.Is</code> หรือ <code>errors.As</code> ดึงออกมาได้ ส่วน <code>%v</code> แปลงเป็นข้อความอย่างเดียว ข้อมูล type หายไป</li><li><strong>Integer division:</strong> <code>3 / 2 == 1</code> ต้องแปลงก่อนหาร <code>float64(sum) / float64(len(nums))</code> Go ไม่แปลง type ให้อัตโนมัติ (ไม่มี implicit conversion) แม้แต่ระหว่าง <code>int</code> กับ <code>int64</code></li><li><strong>string คือ byte ไม่ใช่ตัวอักษร:</strong> string ของ Go เป็น byte sequence แบบ UTF-8 ตัวอักษรไทยใช้ 3 byte ต่อตัว<ul><li><code>len(&quot;สวัสดี&quot;)</code> = 18 (byte)</li><li><code>utf8.RuneCountInString(&quot;สวัสดี&quot;)</code> = 6 (rune)</li><li><code>s[i]</code> ได้ <strong>byte</strong> แต่ <code>for _, r := range s</code> ได้ <strong>rune</strong></li><li><code>Reverse</code> ต้องแปลงเป็น <code>[]rune</code> ก่อน ถ้าสลับทีละ byte ตัวอักษรหลาย byte จะพัง</li></ul></li></ul>
+<h3 id="solutions-คำถามต่อยอด">คำถามต่อยอด</h3>
+<ul><li><strong>Zero value:</strong> <code>int</code>=0, <code>float64</code>=0, <code>bool</code>=false, <code>string</code>="", ส่วน pointer, slice, map, channel, func และ interface = <code>nil</code> nil slice ใช้ <code>len</code>, <code>append</code> และ <code>range</code> ได้เลย แต่<strong>เขียนลง nil map จะ panic</strong></li><li><strong><code>var x int</code> กับ <code>x := 0</code>:</strong> ได้ผลเหมือนกัน แต่ <code>:=</code> ใช้ได้เฉพาะในฟังก์ชัน และต้องมีตัวแปรใหม่อย่างน้อย 1 ตัวทางซ้าย <code>var</code> ใช้ได้ทั้งระดับ package และตอนที่อยากได้ zero value ชัด ๆ</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-02-pointer-และ-pointer-receiver">ข้อ 02 — Pointer และ Pointer Receiver</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/02_pointers/pointers.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package pointers — เฉลยข้อ 2: pointer, pointer receiver, value vs reference</span>
+<span class="t-kw">package</span> pointers
+
+<span class="t-kw">import</span> <span class="t-string">&quot;errors&quot;</span>
+
+<span class="t-kw">var</span> (
+	ErrInvalidAmount     = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;invalid amount&quot;</span>)
+	ErrInsufficientFunds = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;insufficient funds&quot;</span>)
+)
+
+<span class="t-comment">// Swap สลับค่าที่ a และ b ชี้อยู่</span>
+<span class="t-kw">func</span> <span class="t-fn">Swap</span>(a, b *<span class="t-bi">int</span>) {
+	*a, *b = *b, *a
+}
+
+<span class="t-kw">type</span> Account <span class="t-kw">struct</span> {
+	Owner   <span class="t-bi">string</span>
+	Balance <span class="t-bi">int</span>
+}
+
+<span class="t-comment">// NewAccount คืน pointer — ตัวแปร local จะ &quot;escape&quot; ไป heap เอง (escape analysis)</span>
+<span class="t-kw">func</span> <span class="t-fn">NewAccount</span>(owner <span class="t-bi">string</span>, balance <span class="t-bi">int</span>) *Account {
+	<span class="t-kw">return</span> &amp;Account{Owner: owner, Balance: balance}
+}
+
+<span class="t-comment">// Deposit ต้องใช้ pointer receiver เพราะต้องแก้ค่าใน struct ตัวจริง</span>
+<span class="t-comment">// ถ้าเป็น value receiver (a Account) จะแก้แค่ &quot;สำเนา&quot; แล้วทิ้งไป</span>
+<span class="t-kw">func</span> (a *Account) <span class="t-fn">Deposit</span>(amount <span class="t-bi">int</span>) <span class="t-bi">error</span> {
+	<span class="t-kw">if</span> amount &lt;= <span class="t-number">0</span> {
+		<span class="t-kw">return</span> ErrInvalidAmount
+	}
+	a.Balance += amount
+	<span class="t-kw">return</span> <span class="t-bi">nil</span>
+}
+
+<span class="t-kw">func</span> (a *Account) <span class="t-fn">Withdraw</span>(amount <span class="t-bi">int</span>) <span class="t-bi">error</span> {
+	<span class="t-kw">if</span> amount &lt;= <span class="t-number">0</span> {
+		<span class="t-kw">return</span> ErrInvalidAmount
+	}
+	<span class="t-kw">if</span> amount &gt; a.Balance {
+		<span class="t-kw">return</span> ErrInsufficientFunds
+	}
+	a.Balance -= amount
+	<span class="t-kw">return</span> <span class="t-bi">nil</span>
+}
+
+<span class="t-comment">// Transfer โอนเงิน — ถ้าถอนไม่ผ่าน ต้องไม่มีบัญชีไหนเปลี่ยน</span>
+<span class="t-kw">func</span> <span class="t-fn">Transfer</span>(from, to *Account, amount <span class="t-bi">int</span>) <span class="t-bi">error</span> {
+	<span class="t-kw">if</span> err := from.<span class="t-fn">Withdraw</span>(amount); err != <span class="t-bi">nil</span> {
+		<span class="t-kw">return</span> err
+	}
+	<span class="t-comment">// amount ถูก validate แล้วใน Withdraw จึง Deposit ไม่มีทาง error</span>
+	<span class="t-kw">return</span> to.<span class="t-fn">Deposit</span>(amount)
+}
+
+<span class="t-comment">// ApplyBonus เพิ่ม bonus ให้ทุกบัญชีใน slice</span>
+<span class="t-comment">// `for _, a := range accounts` ได้ a เป็น &quot;สำเนา&quot; → ต้องใช้ index แทน</span>
+<span class="t-kw">func</span> <span class="t-fn">ApplyBonus</span>(accounts []Account, bonus <span class="t-bi">int</span>) {
+	<span class="t-kw">for</span> i := <span class="t-kw">range</span> accounts {
+		accounts[i].Balance += bonus
+	}
+}</code></pre></div></details>
+<h3 id="solutions-บั๊กที่-1-value-receiver">บั๊กที่ 1: Value receiver</h3>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> (a Account) <span class="t-fn">Deposit</span>(amount <span class="t-bi">int</span>) <span class="t-bi">error</span> { a.Balance += amount } <span class="t-comment">// ❌ แก้แค่สำเนา</span>
+<span class="t-kw">func</span> (a *Account) <span class="t-fn">Deposit</span>(amount <span class="t-bi">int</span>) <span class="t-bi">error</span> { a.Balance += amount } <span class="t-comment">// ✅</span></code></pre></div>
+<p>Go ส่งทุกอย่างแบบ <strong>pass by value</strong> (copy) receiver ก็เช่นกัน ถ้าต้องการแก้ค่าตัวจริงต้องใช้ pointer เรียก <code>acc.Deposit(50)</code> ได้ทั้งที่ <code>acc</code> ไม่ใช่ pointer เพราะ Go แปลงเป็น <code>(&amp;acc).Deposit(50)</code> ให้เองเมื่อ <code>acc</code> addressable</p>
+<h3 id="solutions-บั๊กที่-2-range-ได้สำเนา">บั๊กที่ 2: range ได้สำเนา</h3>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">for</span> _, a := <span class="t-kw">range</span> accounts { a.Balance += bonus }   <span class="t-comment">// ❌ a คือสำเนา</span>
+<span class="t-kw">for</span> i := <span class="t-kw">range</span> accounts { accounts[i].Balance += bonus } <span class="t-comment">// ✅</span></code></pre></div>
+<h3 id="solutions-transfer-ต้องเป็น-atomic-ในเชิง-logic">Transfer ต้องเป็น atomic (ในเชิง logic)</h3>
+<p>ถอนก่อน ถ้าถอนไม่ผ่านให้ return ทันที บัญชีไหนก็ยังไม่เปลี่ยน ส่วน <code>Deposit</code> หลังจากนั้นไม่มีทาง fail เพราะ <code>amount</code> ผ่านการตรวจใน <code>Withdraw</code> แล้ว</p>
+<h3 id="solutions-คำถามต่อยอด-2">คำถามต่อยอด</h3>
+<ul><li><strong>ใช้ pointer receiver เมื่อ:</strong> (1) ต้องแก้ค่าใน struct (2) struct ใหญ่ ไม่อยาก copy (3) struct มี field ที่ห้าม copy เช่น <code>sync.Mutex</code> ถ้ามี method ไหนเป็น pointer receiver แล้ว ควรให้ทุก method ของ type นั้นเป็นแบบเดียวกันเพื่อความสม่ำเสมอ</li><li><strong>Return pointer ของตัวแปร local ได้ไหม:</strong> ได้ (ต่างจาก C) compiler ทำ <strong>escape analysis</strong> แล้วย้ายตัวแปรไปไว้บน heap ให้เอง ดูผลได้ด้วย <code>go build -gcflags=-m</code></li><li><strong>Go ไม่มี pointer arithmetic</strong> (ยกเว้นใช้ <code>unsafe</code>) จึงปลอดภัยกว่า C</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-03-slice-map-sort">ข้อ 03 — Slice, Map, Sort</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/03_collections/collections.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package collections — เฉลยข้อ 3: slice, map, sort</span>
+<span class="t-kw">package</span> collections
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;sort&quot;</span>
+	<span class="t-string">&quot;strings&quot;</span>
+	<span class="t-string">&quot;unicode&quot;</span>
+)
+
+<span class="t-comment">// WordFrequency นับความถี่ของคำ (ไม่สนตัวพิมพ์เล็ก/ใหญ่)</span>
+<span class="t-comment">// &quot;คำ&quot; = กลุ่มตัวอักษรหรือตัวเลขที่ติดกัน อย่างอื่นถือเป็นตัวคั่น</span>
+<span class="t-kw">func</span> <span class="t-fn">WordFrequency</span>(text <span class="t-bi">string</span>) <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span> {
+	words := strings.<span class="t-fn">FieldsFunc</span>(strings.<span class="t-fn">ToLower</span>(text), <span class="t-kw">func</span>(r <span class="t-bi">rune</span>) <span class="t-bi">bool</span> {
+		<span class="t-kw">return</span> !unicode.<span class="t-fn">IsLetter</span>(r) &amp;&amp; !unicode.<span class="t-fn">IsDigit</span>(r)
+	})
+	freq := <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>, <span class="t-bi">len</span>(words))
+	<span class="t-kw">for</span> _, w := <span class="t-kw">range</span> words {
+		freq[w]++ <span class="t-comment">// key ที่ไม่มีอยู่ จะได้ zero value (0) มาก่อนบวก</span>
+	}
+	<span class="t-kw">return</span> freq
+}
+
+<span class="t-comment">// TopK คืน k คำที่พบบ่อยที่สุด เรียงจากมากไปน้อย</span>
+<span class="t-comment">// ถ้าจำนวนเท่ากัน ให้เรียงตามตัวอักษร (a→z)</span>
+<span class="t-comment">// หมายเหตุ: การวนลูป map ใน Go &quot;ไม่มีลำดับ&quot; จึงต้อง sort เอง</span>
+<span class="t-kw">func</span> <span class="t-fn">TopK</span>(freq <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>, k <span class="t-bi">int</span>) []<span class="t-bi">string</span> {
+	<span class="t-kw">if</span> k &lt;= <span class="t-number">0</span> {
+		<span class="t-kw">return</span> <span class="t-bi">nil</span>
+	}
+	words := <span class="t-bi">make</span>([]<span class="t-bi">string</span>, <span class="t-number">0</span>, <span class="t-bi">len</span>(freq))
+	<span class="t-kw">for</span> w := <span class="t-kw">range</span> freq {
+		words = <span class="t-bi">append</span>(words, w)
+	}
+	sort.<span class="t-fn">Slice</span>(words, <span class="t-kw">func</span>(i, j <span class="t-bi">int</span>) <span class="t-bi">bool</span> {
+		<span class="t-kw">if</span> freq[words[i]] != freq[words[j]] {
+			<span class="t-kw">return</span> freq[words[i]] &gt; freq[words[j]]
+		}
+		<span class="t-kw">return</span> words[i] &lt; words[j]
+	})
+	<span class="t-kw">if</span> k &gt; <span class="t-bi">len</span>(words) {
+		k = <span class="t-bi">len</span>(words)
+	}
+	<span class="t-kw">return</span> words[:k]
+}
+
+<span class="t-comment">// Unique ลบตัวซ้ำโดยคงลำดับเดิม</span>
+<span class="t-kw">func</span> <span class="t-fn">Unique</span>(nums []<span class="t-bi">int</span>) []<span class="t-bi">int</span> {
+	seen := <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">int</span>]<span class="t-kw">struct</span>{}, <span class="t-bi">len</span>(nums)) <span class="t-comment">// struct{} ใช้ memory 0 byte</span>
+	out := <span class="t-bi">make</span>([]<span class="t-bi">int</span>, <span class="t-number">0</span>, <span class="t-bi">len</span>(nums))
+	<span class="t-kw">for</span> _, n := <span class="t-kw">range</span> nums {
+		<span class="t-kw">if</span> _, ok := seen[n]; ok {
+			<span class="t-kw">continue</span>
+		}
+		seen[n] = <span class="t-kw">struct</span>{}{}
+		out = <span class="t-bi">append</span>(out, n)
+	}
+	<span class="t-kw">return</span> out
+}
+
+<span class="t-comment">// Chunk แบ่ง slice เป็นก้อนละ size ตัว (ก้อนสุดท้ายอาจสั้นกว่า)</span>
+<span class="t-comment">// size &lt;= 0 ให้คืน nil</span>
+<span class="t-kw">func</span> <span class="t-fn">Chunk</span>(nums []<span class="t-bi">int</span>, size <span class="t-bi">int</span>) [][]<span class="t-bi">int</span> {
+	<span class="t-kw">if</span> size &lt;= <span class="t-number">0</span> {
+		<span class="t-kw">return</span> <span class="t-bi">nil</span>
+	}
+	chunks := <span class="t-bi">make</span>([][]<span class="t-bi">int</span>, <span class="t-number">0</span>, (<span class="t-bi">len</span>(nums)+size-<span class="t-number">1</span>)/size)
+	<span class="t-kw">for</span> i := <span class="t-number">0</span>; i &lt; <span class="t-bi">len</span>(nums); i += size {
+		end := <span class="t-bi">min</span>(i+size, <span class="t-bi">len</span>(nums))
+		<span class="t-comment">// full slice expression [i:end:end] จำกัด cap</span>
+		<span class="t-comment">// ป้องกันไม่ให้ append ของ chunk หนึ่งไปทับข้อมูลของ chunk ถัดไป</span>
+		chunks = <span class="t-bi">append</span>(chunks, nums[i:end:end])
+	}
+	<span class="t-kw">return</span> chunks
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิดสำคัญ">แนวคิดสำคัญ</h3>
+<ul><li><strong>ลำดับของ map สุ่มโดยตั้งใจ:</strong> Go สุ่มลำดับการวนลูป map ทุกครั้ง ถ้าต้องการผลที่แน่นอนต้องดึง key ออกมาแล้ว sort เอง</li><li><strong>Sort หลายเงื่อนไข:</strong> เทียบ count ก่อน ถ้าเท่ากันค่อยเทียบ word</li><li><strong>Set ใน Go:</strong> ใช้ <code>map[T]struct{}</code> เพราะ <code>struct{}</code> มีขนาด 0 byte</li><li><strong>Full slice expression <code>s[i:j:k]</code>:</strong> จำกัด <code>cap = k - i</code></li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code>nums := []<span class="t-bi">int</span>{<span class="t-number">1</span>, <span class="t-number">2</span>, <span class="t-number">3</span>, <span class="t-number">4</span>}
+a := nums[<span class="t-number">0</span>:<span class="t-number">2</span>]        <span class="t-comment">// len 2, cap 4 → ยังแชร์ array กับ nums</span>
+a = <span class="t-bi">append</span>(a, <span class="t-number">99</span>)     <span class="t-comment">// เขียนทับ nums[2]!  nums = [1 2 99 4]</span>
+
+b := nums[<span class="t-number">0</span>:<span class="t-number">2</span>:<span class="t-number">2</span>]      <span class="t-comment">// len 2, cap 2</span>
+b = <span class="t-bi">append</span>(b, <span class="t-number">99</span>)     <span class="t-comment">// cap ไม่พอ → สร้าง array ใหม่ nums ไม่เปลี่ยน</span></code></pre></div>
+<h3 id="solutions-คำถามต่อยอด-3">คำถามต่อยอด</h3>
+<ul><li><strong>Array กับ Slice:</strong> array มีขนาดคงที่และขนาดเป็นส่วนหนึ่งของ type (<code>[3]int</code> ≠ <code>[4]int</code>) และ copy ทั้งก้อนเมื่อส่งต่อ slice เป็น header 3 ค่า <code>{ptr, len, cap}</code> ที่ชี้ไป array ข้างหลัง copy slice จึงยังแชร์ข้อมูลเดิม</li><li><strong><code>append</code> เมื่อ cap เต็ม:</strong> Go จะสร้าง array ใหม่ (ประมาณ ×2 ตอนเล็ก และ ×1.25 ตอนใหญ่) แล้ว copy ข้อมูลไป</li><li><strong>Map ไม่ thread-safe:</strong> อ่านและเขียนพร้อมกันจะเจอ fatal error (ดูข้อ 08)</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-04-struct-interface-polymorphism">ข้อ 04 — Struct, Interface, Polymorphism</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/04_interfaces/shapes.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package shapes — เฉลยข้อ 4: struct, method, interface, polymorphism, type switch</span>
+<span class="t-kw">package</span> shapes
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;fmt&quot;</span>
+	<span class="t-string">&quot;math&quot;</span>
+)
+
+<span class="t-comment">// Shape — type ไหนมี method ครบ 2 ตัวนี้ ถือว่า implement Shape อัตโนมัติ</span>
+<span class="t-comment">// (implicit interface — ไม่ต้องเขียน implements)</span>
+<span class="t-kw">type</span> Shape <span class="t-kw">interface</span> {
+	<span class="t-fn">Area</span>() <span class="t-bi">float64</span>
+	<span class="t-fn">Perimeter</span>() <span class="t-bi">float64</span>
+}
+
+<span class="t-kw">type</span> Rectangle <span class="t-kw">struct</span> {
+	Width, Height <span class="t-bi">float64</span>
+}
+
+<span class="t-kw">func</span> (r Rectangle) <span class="t-fn">Area</span>() <span class="t-bi">float64</span>      { <span class="t-kw">return</span> r.Width * r.Height }
+<span class="t-kw">func</span> (r Rectangle) <span class="t-fn">Perimeter</span>() <span class="t-bi">float64</span> { <span class="t-kw">return</span> <span class="t-number">2</span> * (r.Width + r.Height) }
+
+<span class="t-kw">type</span> Circle <span class="t-kw">struct</span> {
+	Radius <span class="t-bi">float64</span>
+}
+
+<span class="t-kw">func</span> (c Circle) <span class="t-fn">Area</span>() <span class="t-bi">float64</span>      { <span class="t-kw">return</span> math.Pi * c.Radius * c.Radius }
+<span class="t-kw">func</span> (c Circle) <span class="t-fn">Perimeter</span>() <span class="t-bi">float64</span> { <span class="t-kw">return</span> <span class="t-number">2</span> * math.Pi * c.Radius }
+
+<span class="t-comment">// compile-time check ว่า type implement interface จริง</span>
+<span class="t-kw">var</span> (
+	_ Shape = Rectangle{}
+	_ Shape = Circle{}
+)
+
+<span class="t-comment">// TotalArea รับกี่ shape ก็ได้ (variadic) — ทดแทน method overloading ที่ Go ไม่มี</span>
+<span class="t-kw">func</span> <span class="t-fn">TotalArea</span>(shapes ...Shape) <span class="t-bi">float64</span> {
+	total := <span class="t-number">0.0</span>
+	<span class="t-kw">for</span> _, s := <span class="t-kw">range</span> shapes {
+		total += s.<span class="t-fn">Area</span>()
+	}
+	<span class="t-kw">return</span> total
+}
+
+<span class="t-comment">// Largest คืน shape ที่พื้นที่มากที่สุด, ถ้า slice ว่างคืน (nil, false)</span>
+<span class="t-kw">func</span> <span class="t-fn">Largest</span>(shapes []Shape) (Shape, <span class="t-bi">bool</span>) {
+	<span class="t-kw">if</span> <span class="t-bi">len</span>(shapes) == <span class="t-number">0</span> {
+		<span class="t-kw">return</span> <span class="t-bi">nil</span>, <span class="t-bi">false</span>
+	}
+	best := shapes[<span class="t-number">0</span>]
+	<span class="t-kw">for</span> _, s := <span class="t-kw">range</span> shapes[<span class="t-number">1</span>:] {
+		<span class="t-kw">if</span> s.<span class="t-fn">Area</span>() &gt; best.<span class="t-fn">Area</span>() {
+			best = s
+		}
+	}
+	<span class="t-kw">return</span> best, <span class="t-bi">true</span>
+}
+
+<span class="t-comment">// Describe ใช้ type switch แยกประเภท</span>
+<span class="t-comment">//</span>
+<span class="t-comment">//	Rectangle{2,3} -&gt; &quot;rectangle 2x3&quot;</span>
+<span class="t-comment">//	Circle{1.5}    -&gt; &quot;circle r=1.5&quot;</span>
+<span class="t-comment">//	อื่น ๆ          -&gt; &quot;unknown shape&quot;</span>
+<span class="t-kw">func</span> <span class="t-fn">Describe</span>(s Shape) <span class="t-bi">string</span> {
+	<span class="t-kw">switch</span> v := s.(<span class="t-kw">type</span>) {
+	<span class="t-kw">case</span> Rectangle:
+		<span class="t-kw">return</span> fmt.<span class="t-fn">Sprintf</span>(<span class="t-string">&quot;rectangle %gx%g&quot;</span>, v.Width, v.Height)
+	<span class="t-kw">case</span> Circle:
+		<span class="t-kw">return</span> fmt.<span class="t-fn">Sprintf</span>(<span class="t-string">&quot;circle r=%g&quot;</span>, v.Radius)
+	<span class="t-kw">default</span>:
+		<span class="t-kw">return</span> <span class="t-string">&quot;unknown shape&quot;</span>
+	}
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิด-2">แนวคิด</h3>
+<ul><li><strong>Implicit interface:</strong> ไม่ต้องประกาศ <code>implements</code> ขอแค่ type มี method ครบก็ใช้เป็น interface นั้นได้ ข้อดีคือ interface ประกาศฝั่ง "ผู้ใช้" ได้ (consumer-side interface) ทำให้ mock ง่าย</li><li><strong>Compile-time check:</strong> <code>var _ Shape = Rectangle{}</code> ถ้า Rectangle มี method ไม่ครบ จะ compile ไม่ผ่านทันที</li><li><strong>Type switch:</strong></li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">switch</span> v := s.(<span class="t-kw">type</span>) {
+<span class="t-kw">case</span> Rectangle: <span class="t-comment">// v เป็น Rectangle</span>
+<span class="t-kw">case</span> Circle:    <span class="t-comment">// v เป็น Circle</span>
+<span class="t-kw">default</span>:
+}</code></pre></div>
+<h3 id="solutions-คำถามต่อยอด-4">คำถามต่อยอด</h3>
+<ul><li><strong>Go ไม่มี method/function overloading</strong> ใช้แทนได้ด้วย (1) ตั้งชื่อต่างกัน เช่น <code>ParseInt</code> / <code>ParseFloat</code> (2) variadic <code>...T</code> (3) interface (4) generics (5) functional options pattern</li><li><strong>nil interface กับ interface ที่เก็บ nil pointer</strong> (กับดักยอดฮิต):</li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> <span class="t-fn">find</span>() <span class="t-bi">error</span> {
+    <span class="t-kw">var</span> e *MyErr = <span class="t-bi">nil</span>
+    <span class="t-kw">return</span> e          <span class="t-comment">// interface{type=*MyErr, value=nil} ≠ nil</span>
+}
+<span class="t-fn">find</span>() != <span class="t-bi">nil</span> <span class="t-comment">// true! 😱</span></code></pre></div>
+<p>interface จะเป็น nil ก็ต่อเมื่อทั้ง <strong>type และ value</strong> เป็น nil ดังนั้นถ้าไม่มี error ให้ <code>return nil</code> ตรง ๆ</p>
+<hr>
+<h2 id="solutions-ข้อ-05-error-handling-และ-custom-error">ข้อ 05 — Error Handling และ Custom Error</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/05_errors/store.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package store — เฉลยข้อ 5: error handling, sentinel error, custom error type, wrapping</span>
+<span class="t-kw">package</span> store
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;errors&quot;</span>
+	<span class="t-string">&quot;fmt&quot;</span>
+	<span class="t-string">&quot;strings&quot;</span>
+)
+
+<span class="t-comment">// sentinel errors — ให้ caller เช็คด้วย errors.Is</span>
+<span class="t-kw">var</span> (
+	ErrNotFound       = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;user not found&quot;</span>)
+	ErrDuplicateEmail = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;duplicate email&quot;</span>)
+)
+
+<span class="t-comment">// ValidationError — custom error type ที่พกข้อมูลเพิ่ม (field ไหนผิด)</span>
+<span class="t-comment">// ให้ caller ดึงออกมาด้วย errors.As</span>
+<span class="t-kw">type</span> ValidationError <span class="t-kw">struct</span> {
+	Field <span class="t-bi">string</span>
+	Msg   <span class="t-bi">string</span>
+}
+
+<span class="t-comment">// Error ทำให้ *ValidationError implement interface `error`</span>
+<span class="t-kw">func</span> (e *ValidationError) <span class="t-fn">Error</span>() <span class="t-bi">string</span> {
+	<span class="t-kw">return</span> fmt.<span class="t-fn">Sprintf</span>(<span class="t-string">&quot;validation failed on %s: %s&quot;</span>, e.Field, e.Msg)
+}
+
+<span class="t-kw">type</span> User <span class="t-kw">struct</span> {
+	ID    <span class="t-bi">int</span>
+	Name  <span class="t-bi">string</span>
+	Email <span class="t-bi">string</span>
+}
+
+<span class="t-kw">type</span> Store <span class="t-kw">struct</span> {
+	users   <span class="t-kw">map</span>[<span class="t-bi">int</span>]User
+	byEmail <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>
+	nextID  <span class="t-bi">int</span>
+}
+
+<span class="t-kw">func</span> <span class="t-fn">NewStore</span>() *Store {
+	<span class="t-kw">return</span> &amp;Store{
+		users:   <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">int</span>]User),
+		byEmail: <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>),
+		nextID:  <span class="t-number">1</span>,
+	}
+}
+
+<span class="t-comment">// Create สร้าง user ใหม่ (ID เริ่มที่ 1 และเพิ่มทีละ 1)</span>
+<span class="t-comment">//   - name ว่าง (หลัง trim)         → *ValidationError{Field: &quot;name&quot;}</span>
+<span class="t-comment">//   - email ไม่มี &quot;@&quot;              → *ValidationError{Field: &quot;email&quot;}</span>
+<span class="t-comment">//   - email ซ้ำ                    → error ที่ wrap ErrDuplicateEmail</span>
+<span class="t-kw">func</span> (s *Store) <span class="t-fn">Create</span>(name, email <span class="t-bi">string</span>) (User, <span class="t-bi">error</span>) {
+	name = strings.<span class="t-fn">TrimSpace</span>(name)
+	<span class="t-kw">if</span> name == <span class="t-string">&quot;&quot;</span> {
+		<span class="t-kw">return</span> User{}, &amp;ValidationError{Field: <span class="t-string">&quot;name&quot;</span>, Msg: <span class="t-string">&quot;must not be empty&quot;</span>}
+	}
+	<span class="t-kw">if</span> !strings.<span class="t-fn">Contains</span>(email, <span class="t-string">&quot;@&quot;</span>) {
+		<span class="t-kw">return</span> User{}, &amp;ValidationError{Field: <span class="t-string">&quot;email&quot;</span>, Msg: <span class="t-string">&quot;must contain @&quot;</span>}
+	}
+	<span class="t-kw">if</span> _, exists := s.byEmail[email]; exists {
+		<span class="t-kw">return</span> User{}, fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;create user %q: %w&quot;</span>, email, ErrDuplicateEmail)
+	}
+	u := User{ID: s.nextID, Name: name, Email: email}
+	s.users[u.ID] = u
+	s.byEmail[email] = u.ID
+	s.nextID++
+	<span class="t-kw">return</span> u, <span class="t-bi">nil</span>
+}
+
+<span class="t-comment">// Get หา user ตาม id — ไม่เจอให้ wrap ErrNotFound พร้อม context</span>
+<span class="t-kw">func</span> (s *Store) <span class="t-fn">Get</span>(id <span class="t-bi">int</span>) (User, <span class="t-bi">error</span>) {
+	u, ok := s.users[id]
+	<span class="t-kw">if</span> !ok {
+		<span class="t-kw">return</span> User{}, fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;get user %d: %w&quot;</span>, id, ErrNotFound)
+	}
+	<span class="t-kw">return</span> u, <span class="t-bi">nil</span>
+}</code></pre></div></details>
+<h3 id="solutions-รูปแบบ-error-3-แบบในข้อนี้">รูปแบบ error 3 แบบในข้อนี้</h3>
+<div class="table-wrap"><table><thead><tr><th>แบบ</th><th>ตัวอย่าง</th><th>ผู้เรียกตรวจด้วย</th><th>ใช้เมื่อ</th></tr></thead><tbody><tr><td>Sentinel error</td><td><code>var ErrNotFound = errors.New(...)</code></td><td><code>errors.Is(err, ErrNotFound)</code></td><td>สนใจแค่ว่า "เป็น error ชนิดนี้ไหม"</td></tr><tr><td>Custom type</td><td><code>type ValidationError struct{...}</code></td><td><code>errors.As(err, &amp;ve)</code></td><td>ต้องการข้อมูลเพิ่ม เช่น field ไหนผิด</td></tr><tr><td>Wrapping</td><td><code>fmt.Errorf(&quot;get user %d: %w&quot;, id, err)</code></td><td>ทั้ง Is และ As ยังทำงาน</td><td>เพิ่ม context ระหว่างส่ง error ขึ้นไป</td></tr></tbody></table></div>
+<h3 id="solutions-จุดที่มักพลาด">จุดที่มักพลาด</h3>
+<ul><li>ใช้ <code>err == ErrNotFound</code> ซึ่งจะพังทันทีที่มีใคร wrap error ให้ใช้ <code>errors.Is</code> เสมอ</li><li><code>errors.As</code> ต้องส่ง <strong>pointer ไปยังตัวแปร</strong> ที่เป็น type เดียวกับตัวที่ implement <code>error</code> ในข้อนี้คือ <code>var ve *ValidationError; errors.As(err, &amp;ve)</code></li><li>ข้อความ error ควรขึ้นต้นด้วยตัวพิมพ์เล็กและไม่ลงท้ายด้วยจุด (Go convention) เพราะมักถูกนำไปต่อกับข้อความอื่น</li></ul>
+<h3 id="solutions-คำถามต่อยอด-5">คำถามต่อยอด</h3>
+<ul><li><strong>ทำไม Go ไม่มี exception:</strong> เพื่อให้เส้นทางของ error <strong>เห็นชัดในโค้ด</strong> ทุกจุดที่ fail ได้ต้องจัดการหรือส่งต่อ ไม่มี control flow ซ่อนอยู่</li><li><strong><code>panic</code> ใช้เมื่อ:</strong> เกิดสิ่งที่ไม่ควรเกิดขึ้นเลย (programmer error) หรือตอน init แล้ว config พัง ไม่ใช้กับ error ปกติ ส่วน <code>recover</code> ใช้ได้เฉพาะใน <code>defer</code> เช่น middleware ที่กัน server ล่ม</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-06-json-และ-struct-tags">ข้อ 06 — JSON และ Struct Tags</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/06_json/orders.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package orders — เฉลยข้อ 6: encoding/json, struct tags, omitempty, raw string</span>
+<span class="t-kw">package</span> orders
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;encoding/json&quot;</span>
+	<span class="t-string">&quot;errors&quot;</span>
+	<span class="t-string">&quot;fmt&quot;</span>
+)
+
+<span class="t-kw">var</span> ErrMissingID = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;order id is required&quot;</span>)
+
+<span class="t-comment">// struct tag บอก encoding/json ว่า field นี้ map กับ key อะไรใน JSON</span>
+<span class="t-comment">// ต้องเป็น exported field (ตัวใหญ่) เท่านั้น json ถึงจะมองเห็น</span>
+<span class="t-kw">type</span> Item <span class="t-kw">struct</span> {
+	SKU   <span class="t-bi">string</span>  <span class="t-string">`json:&quot;sku&quot;`</span>
+	Qty   <span class="t-bi">int</span>     <span class="t-string">`json:&quot;qty&quot;`</span>
+	Price <span class="t-bi">float64</span> <span class="t-string">`json:&quot;price&quot;`</span>
+}
+
+<span class="t-kw">type</span> Order <span class="t-kw">struct</span> {
+	ID       <span class="t-bi">string</span> <span class="t-string">`json:&quot;id&quot;`</span>
+	Customer <span class="t-bi">string</span> <span class="t-string">`json:&quot;customer_name&quot;`</span>
+	Items    []Item <span class="t-string">`json:&quot;items&quot;`</span>
+	Note     <span class="t-bi">string</span> <span class="t-string">`json:&quot;note,omitempty&quot;`</span> <span class="t-comment">// omitempty: ไม่ใส่ key ถ้าเป็นค่าว่าง</span>
+}
+
+<span class="t-comment">// Total = ผลรวมของ Qty * Price</span>
+<span class="t-kw">func</span> (o Order) <span class="t-fn">Total</span>() <span class="t-bi">float64</span> {
+	total := <span class="t-number">0.0</span>
+	<span class="t-kw">for</span> _, it := <span class="t-kw">range</span> o.Items {
+		total += <span class="t-bi">float64</span>(it.Qty) * it.Price
+	}
+	<span class="t-kw">return</span> total
+}
+
+<span class="t-comment">// ParseOrder แปลง JSON เป็น Order และตรวจว่ามี id</span>
+<span class="t-kw">func</span> <span class="t-fn">ParseOrder</span>(data []<span class="t-bi">byte</span>) (Order, <span class="t-bi">error</span>) {
+	<span class="t-kw">var</span> o Order
+	<span class="t-kw">if</span> err := json.<span class="t-fn">Unmarshal</span>(data, &amp;o); err != <span class="t-bi">nil</span> {
+		<span class="t-kw">return</span> Order{}, fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;parse order: %w&quot;</span>, err)
+	}
+	<span class="t-kw">if</span> o.ID == <span class="t-string">&quot;&quot;</span> {
+		<span class="t-kw">return</span> Order{}, ErrMissingID
+	}
+	<span class="t-kw">return</span> o, <span class="t-bi">nil</span>
+}
+
+<span class="t-kw">type</span> Summary <span class="t-kw">struct</span> {
+	Count      <span class="t-bi">int</span>                <span class="t-string">`json:&quot;count&quot;`</span>
+	Revenue    <span class="t-bi">float64</span>            <span class="t-string">`json:&quot;revenue&quot;`</span>
+	ByCustomer <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">float64</span> <span class="t-string">`json:&quot;by_customer&quot;`</span>
+}
+
+<span class="t-comment">// Summarize รับ JSON array ของ orders แล้วคืน JSON ของ Summary</span>
+<span class="t-kw">func</span> <span class="t-fn">Summarize</span>(data []<span class="t-bi">byte</span>) ([]<span class="t-bi">byte</span>, <span class="t-bi">error</span>) {
+	<span class="t-kw">var</span> orders []Order
+	<span class="t-kw">if</span> err := json.<span class="t-fn">Unmarshal</span>(data, &amp;orders); err != <span class="t-bi">nil</span> {
+		<span class="t-kw">return</span> <span class="t-bi">nil</span>, fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;summarize: %w&quot;</span>, err)
+	}
+	sum := Summary{ByCustomer: <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">float64</span>)}
+	<span class="t-kw">for</span> _, o := <span class="t-kw">range</span> orders {
+		t := o.<span class="t-fn">Total</span>()
+		sum.Count++
+		sum.Revenue += t
+		sum.ByCustomer[o.Customer] += t
+	}
+	<span class="t-kw">return</span> json.<span class="t-fn">Marshal</span>(sum)
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิด-3">แนวคิด</h3>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> Order <span class="t-kw">struct</span> {
+    ID       <span class="t-bi">string</span> <span class="t-string">`json:&quot;id&quot;`</span>
+    Customer <span class="t-bi">string</span> <span class="t-string">`json:&quot;customer_name&quot;`</span>   <span class="t-comment">// ชื่อ key ต่างจากชื่อ field</span>
+    Items    []Item <span class="t-string">`json:&quot;items&quot;`</span>
+    Note     <span class="t-bi">string</span> <span class="t-string">`json:&quot;note,omitempty&quot;`</span>  <span class="t-comment">// ค่าว่างจะไม่ออกใน JSON</span>
+}</code></pre></div>
+<ul><li><code>encoding/json</code> ใช้ reflection และมองเห็น<strong>เฉพาะ exported field</strong> (ตัวพิมพ์ใหญ่)</li><li>ถ้าไม่มี tag ตอน <strong>Unmarshal</strong> จะจับคู่ชื่อแบบไม่สนตัวพิมพ์ (<code>&quot;id&quot;</code> เข้า <code>ID</code> ได้) แต่ <code>customer_name</code> ไม่มีทางเข้า <code>Customer</code> ได้</li><li>ถ้าไม่มี tag ตอน <strong>Marshal</strong> key จะออกมาเป็นชื่อ field ตรง ๆ (<code>&quot;Customer&quot;</code>)</li><li>Test ใช้ <strong>raw string literal</strong> (backtick) เก็บ JSON หลายบรรทัดได้โดยไม่ต้อง escape</li></ul>
+<h3 id="solutions-คำถามต่อยอด-6">คำถามต่อยอด</h3>
+<ul><li><strong>JSON ใหญ่มาก:</strong> ใช้ <code>json.NewDecoder(r)</code> อ่านแบบ stream และใช้ <code>dec.Token()</code> + <code>dec.More()</code> วน decode ทีละ element แทนการโหลดทั้งไฟล์เข้า memory</li><li><strong>Unmarshal ลง <code>map[string]any</code>:</strong> ตัวเลขทุกตัวเป็น <code>float64</code> (ใช้ <code>dec.UseNumber()</code> ถ้าต้องการความแม่นยำ)</li><li><strong>ปฏิเสธ field ที่ไม่รู้จัก:</strong> <code>dec.DisallowUnknownFields()</code></li></ul>
+<hr>
+<h2 id="solutions-ข้อ-07-worker-pool">ข้อ 07 — Worker Pool</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/07_workerpool/workerpool.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package workerpool — เฉลยข้อ 7: goroutine, channel, sync.WaitGroup, worker pool</span>
+<span class="t-kw">package</span> workerpool
+
+<span class="t-kw">import</span> <span class="t-string">&quot;sync&quot;</span>
+
+<span class="t-comment">// ParallelMap เรียก fn กับทุกตัวใน nums โดยใช้ goroutine ไม่เกิน workers ตัวพร้อมกัน</span>
+<span class="t-comment">// ผลลัพธ์ต้องเรียงตามลำดับเดิมของ nums</span>
+<span class="t-kw">func</span> <span class="t-fn">ParallelMap</span>(nums []<span class="t-bi">int</span>, workers <span class="t-bi">int</span>, fn <span class="t-kw">func</span>(<span class="t-bi">int</span>) <span class="t-bi">int</span>) []<span class="t-bi">int</span> {
+	<span class="t-kw">if</span> workers &lt; <span class="t-number">1</span> {
+		workers = <span class="t-number">1</span>
+	}
+	results := <span class="t-bi">make</span>([]<span class="t-bi">int</span>, <span class="t-bi">len</span>(nums)) <span class="t-comment">// จอง slice ไว้ก่อน ให้แต่ละ worker เขียนคนละ index → ไม่มี data race</span>
+	jobs := <span class="t-bi">make</span>(<span class="t-kw">chan</span> <span class="t-bi">int</span>)            <span class="t-comment">// ส่ง &quot;index&quot; ของงาน</span>
+
+	<span class="t-kw">var</span> wg sync.WaitGroup
+	<span class="t-kw">for</span> <span class="t-kw">range</span> workers {
+		wg.<span class="t-fn">Add</span>(<span class="t-number">1</span>)
+		<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+			<span class="t-kw">defer</span> wg.<span class="t-fn">Done</span>()
+			<span class="t-kw">for</span> i := <span class="t-kw">range</span> jobs { <span class="t-comment">// วนจนกว่า jobs จะถูก close</span>
+				results[i] = <span class="t-fn">fn</span>(nums[i])
+			}
+		}()
+	}
+
+	<span class="t-kw">for</span> i := <span class="t-kw">range</span> nums {
+		jobs &lt;- i
+	}
+	<span class="t-bi">close</span>(jobs) <span class="t-comment">// บอก worker ว่าไม่มีงานแล้ว → range ข้างบนจบ</span>
+	wg.<span class="t-fn">Wait</span>()   <span class="t-comment">// รอทุก worker เสร็จก่อนคืนผล</span>
+	<span class="t-kw">return</span> results
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิด-4">แนวคิด</h3>
+<div class="code"><pre><code>        jobs (index)            results[i]
+main ──► [0,1,2,...] ──► worker 1 ──┐
+                     ──► worker 2 ──┼──► slice ที่จองไว้ล่วงหน้า
+                     ──► worker 3 ──┘
+close(jobs) → worker ออกจาก range → wg.Done() → wg.Wait() คืนผล</code></pre></div>
+<ul><li><strong>คงลำดับได้:</strong> เพราะส่ง index ไปด้วย แต่ละ worker เขียนลง <code>results[i]</code> คนละช่อง จึง<strong>ไม่มี data race</strong> (เขียน element ต่างกันของ slice พร้อมกันได้)</li><li><strong>จำกัด concurrency:</strong> จำนวน goroutine = <code>workers</code> ตัวพอดี</li><li><strong><code>close(jobs)</code></strong> ทำให้ <code>for i := range jobs</code> จบ ถ้าลืม worker จะค้างและ <code>wg.Wait()</code> จะ deadlock</li><li>Go 1.25+ ใช้ <code>wg.Go(func(){...})</code> แทน <code>wg.Add(1)</code> + <code>defer wg.Done()</code> ได้</li></ul>
+<h3 id="solutions-คำถามต่อยอด-7">คำถามต่อยอด</h3>
+<ul><li><strong>Goroutine กับ OS thread:</strong> goroutine เริ่มที่ stack ~2KB และโตได้ สร้างได้เป็นแสนตัว runtime จัดตารางแบบ M:N (ดูทฤษฎีข้อ 45) ส่วน OS thread มี stack ~1–8MB และการ context switch แพงกว่า</li><li><strong>Unbuffered channel:</strong> ผู้ส่งจะรอจนมีผู้รับ (synchronization) ส่วน <strong>buffered</strong> ส่งได้เลยจน buffer เต็ม</li><li><strong>ถ้า fn panic:</strong> panic ใน goroutine จะทำให้ทั้งโปรแกรมล่ม ต้อง <code>defer func(){ if r := recover(); r != nil {...} }()</code> ในแต่ละ worker</li><li><strong>ต้องคืน error:</strong> ใช้ <code>golang.org/x/sync/errgroup</code> ซึ่งมี <code>g.SetLimit(n)</code> จำกัด concurrency และคืน error ตัวแรกได้</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-08-race-condition-และ-mutex">ข้อ 08 — Race Condition และ Mutex</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/08_mutex/counter.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package counter — เฉลยข้อ 8: race condition, sync.Mutex</span>
+<span class="t-kw">package</span> counter
+
+<span class="t-kw">import</span> <span class="t-string">&quot;sync&quot;</span>
+
+<span class="t-comment">// Counter นับจำนวนครั้งต่อ key และต้องปลอดภัยเมื่อถูกเรียกจากหลาย goroutine</span>
+<span class="t-comment">// map ของ Go ไม่ thread-safe: เขียนพร้อมกัน → &quot;fatal error: concurrent map writes&quot;</span>
+<span class="t-kw">type</span> Counter <span class="t-kw">struct</span> {
+	mu sync.Mutex <span class="t-comment">// ไม่ต้อง init, zero value ใช้งานได้เลย</span>
+	m  <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>
+}
+
+<span class="t-kw">func</span> <span class="t-fn">NewCounter</span>() *Counter {
+	<span class="t-kw">return</span> &amp;Counter{m: <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>)}
+}
+
+<span class="t-kw">func</span> (c *Counter) <span class="t-fn">Inc</span>(key <span class="t-bi">string</span>) {
+	c.mu.<span class="t-fn">Lock</span>()
+	<span class="t-kw">defer</span> c.mu.<span class="t-fn">Unlock</span>()
+	c.m[key]++
+}
+
+<span class="t-kw">func</span> (c *Counter) <span class="t-fn">Value</span>(key <span class="t-bi">string</span>) <span class="t-bi">int</span> {
+	c.mu.<span class="t-fn">Lock</span>()
+	<span class="t-kw">defer</span> c.mu.<span class="t-fn">Unlock</span>()
+	<span class="t-kw">return</span> c.m[key]
+}
+
+<span class="t-comment">// Snapshot คืน &quot;สำเนา&quot; ของข้อมูล — ถ้าคืน c.m ตรง ๆ คนนอกจะแก้ map ได้โดยไม่ผ่าน lock</span>
+<span class="t-kw">func</span> (c *Counter) <span class="t-fn">Snapshot</span>() <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span> {
+	c.mu.<span class="t-fn">Lock</span>()
+	<span class="t-kw">defer</span> c.mu.<span class="t-fn">Unlock</span>()
+	out := <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>, <span class="t-bi">len</span>(c.m))
+	<span class="t-kw">for</span> k, v := <span class="t-kw">range</span> c.m {
+		out[k] = v
+	}
+	<span class="t-kw">return</span> out
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิด-5">แนวคิด</h3>
+<ul><li><code>c.m[key]++</code> คือ <strong>อ่าน → บวก → เขียน</strong> ไม่ใช่ atomic เมื่อหลาย goroutine ทำพร้อมกัน ค่าจะหาย และ runtime ของ Go จะตรวจเจอการเขียน map พร้อมกันแล้ว crash ทันที</li><li><code>mu.Lock()</code> + <code>defer mu.Unlock()</code> ทำให้แน่ใจว่า unlock เสมอแม้จะ return หรือ panic กลางทาง</li><li><strong>Snapshot ต้อง copy:</strong> map เป็น reference type ถ้าคืน <code>c.m</code> ออกไปตรง ๆ คนนอกจะแก้ข้อมูลได้โดยไม่ผ่าน lock ซึ่งเป็น race อีกแบบ (Go 1.21+ ใช้ <code>maps.Clone</code> ได้)</li><li><code>go test -race</code> ใช้ <strong>race detector</strong> ตรวจการเข้าถึง memory พร้อมกัน ควรเปิดใน CI เสมอ</li></ul>
+<h3 id="solutions-คำถามต่อยอด-8">คำถามต่อยอด</h3>
+<ul><li><strong><code>RWMutex</code>:</strong> อ่านพร้อมกันได้หลายตัว (<code>RLock</code>) แต่เขียนได้ทีละตัว เหมาะกับงานที่อ่านเยอะกว่าเขียนมาก</li><li><strong>ทางเลือกอื่น:</strong> <code>atomic.Int64</code> สำหรับตัวนับตัวเดียว, <code>sync.Map</code> สำหรับ key ที่เขียนครั้งเดียวแต่อ่านบ่อย หรือ goroutine เดียวที่เป็นเจ้าของ state แล้วให้ตัวอื่นสื่อสารผ่าน channel ("Don't communicate by sharing memory; share memory by communicating")</li><li><strong>ห้าม copy Mutex:</strong> copy แล้วจะได้ lock คนละตัว <code>go vet</code> (copylocks) จะเตือน นี่คือเหตุผลที่ struct ที่มี Mutex ต้องใช้ pointer receiver</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-09-pipeline-fan-in-และ-goroutine-leak">ข้อ 09 — Pipeline, Fan-in และ Goroutine Leak</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/09_pipeline/pipeline.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package pipeline — เฉลยข้อ 9: pipeline, fan-in, context cancellation, goroutine leak</span>
+<span class="t-kw">package</span> pipeline
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;context&quot;</span>
+	<span class="t-string">&quot;sync&quot;</span>
+)
+
+<span class="t-comment">// Generate ส่งตัวเลขออกทาง channel ทีละตัว แล้ว close เมื่อหมด</span>
+<span class="t-comment">// ต้องหยุด (และ close) ทันทีเมื่อ ctx ถูก cancel — ไม่งั้น goroutine จะค้างที่ `out &lt;- n` ตลอดไป (leak)</span>
+<span class="t-kw">func</span> <span class="t-fn">Generate</span>(ctx context.Context, nums ...<span class="t-bi">int</span>) &lt;-<span class="t-kw">chan</span> <span class="t-bi">int</span> {
+	out := <span class="t-bi">make</span>(<span class="t-kw">chan</span> <span class="t-bi">int</span>)
+	<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+		<span class="t-kw">defer</span> <span class="t-bi">close</span>(out)
+		<span class="t-kw">for</span> _, n := <span class="t-kw">range</span> nums {
+			<span class="t-kw">select</span> {
+			<span class="t-kw">case</span> out &lt;- n:
+			<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():
+				<span class="t-kw">return</span>
+			}
+		}
+	}()
+	<span class="t-kw">return</span> out
+}
+
+<span class="t-comment">// Square อ่านจาก in แล้วส่ง n*n ออกไป</span>
+<span class="t-kw">func</span> <span class="t-fn">Square</span>(ctx context.Context, in &lt;-<span class="t-kw">chan</span> <span class="t-bi">int</span>) &lt;-<span class="t-kw">chan</span> <span class="t-bi">int</span> {
+	out := <span class="t-bi">make</span>(<span class="t-kw">chan</span> <span class="t-bi">int</span>)
+	<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+		<span class="t-kw">defer</span> <span class="t-bi">close</span>(out)
+		<span class="t-kw">for</span> n := <span class="t-kw">range</span> in {
+			<span class="t-kw">select</span> {
+			<span class="t-kw">case</span> out &lt;- n * n:
+			<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():
+				<span class="t-kw">return</span>
+			}
+		}
+	}()
+	<span class="t-kw">return</span> out
+}
+
+<span class="t-comment">// Merge รวมหลาย channel เป็น channel เดียว (fan-in)</span>
+<span class="t-comment">// close out เมื่อ input ทุกตัวถูก close แล้ว</span>
+<span class="t-kw">func</span> <span class="t-fn">Merge</span>(ctx context.Context, cs ...&lt;-<span class="t-kw">chan</span> <span class="t-bi">int</span>) &lt;-<span class="t-kw">chan</span> <span class="t-bi">int</span> {
+	out := <span class="t-bi">make</span>(<span class="t-kw">chan</span> <span class="t-bi">int</span>)
+	<span class="t-kw">var</span> wg sync.WaitGroup
+	<span class="t-kw">for</span> _, c := <span class="t-kw">range</span> cs {
+		wg.<span class="t-fn">Add</span>(<span class="t-number">1</span>)
+		<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+			<span class="t-kw">defer</span> wg.<span class="t-fn">Done</span>()
+			<span class="t-kw">for</span> n := <span class="t-kw">range</span> c {
+				<span class="t-kw">select</span> {
+				<span class="t-kw">case</span> out &lt;- n:
+				<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():
+					<span class="t-kw">return</span>
+				}
+			}
+		}()
+	}
+	<span class="t-comment">// goroutine แยกคอย close — ถ้า wg.Wait() ใน Merge ตรง ๆ จะ deadlock เพราะยังไม่มีใครอ่าน out</span>
+	<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+		wg.<span class="t-fn">Wait</span>()
+		<span class="t-bi">close</span>(out)
+	}()
+	<span class="t-kw">return</span> out
+}</code></pre></div></details>
+<h3 id="solutions-ทำไมโค้ดเดิม-leak">ทำไมโค้ดเดิม leak</h3>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">for</span> _, n := <span class="t-kw">range</span> nums {
+    out &lt;- n    <span class="t-comment">// ถ้าไม่มีใครอ่านแล้ว บรรทัดนี้จะบล็อกตลอดไป</span>
+}</code></pre></div>
+<p>goroutine ที่บล็อกค้างจะ<strong>ไม่ถูก GC เก็บ</strong> เพราะ runtime ไม่รู้ว่าจะมีคนมาอ่านหรือไม่ ทั้ง stack และตัวแปรที่มันถืออยู่จึงค้างใน memory ตลอดไป</p>
+<h3 id="solutions-วิธีแก้-select-กับ-ctx-done">วิธีแก้: select กับ ctx.Done()</h3>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">select</span> {
+<span class="t-kw">case</span> out &lt;- n:
+<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():
+    <span class="t-kw">return</span>   <span class="t-comment">// defer close(out) ทำงาน → stage ถัดไปก็จบตาม</span>
+}</code></pre></div>
+<h3 id="solutions-merge-fan-in">Merge (fan-in)</h3>
+<ul><li>1 goroutine ต่อ 1 input channel คอย forward ค่าไปที่ <code>out</code></li><li><strong>ต้องแยก goroutine</strong> ออกมาทำ <code>wg.Wait(); close(out)</code> ถ้าเรียก <code>wg.Wait()</code> ใน Merge ตรง ๆ จะ deadlock เพราะยังไม่ได้คืน <code>out</code> ให้ใครอ่าน</li></ul>
+<h3 id="solutions-คำถามต่อยอด-9">คำถามต่อยอด</h3>
+<ul><li><strong>หา leak ใน production:</strong> <code>net/http/pprof</code> → <code>/debug/pprof/goroutine?debug=2</code> ดูว่า goroutine ค้างที่บรรทัดไหน หรือดู metric <code>runtime.NumGoroutine()</code> ว่าโตขึ้นเรื่อย ๆ หรือไม่ ใน test ใช้ <code>go.uber.org/goleak</code></li><li><strong>ผู้ส่งเป็นคน close:</strong> ส่งค่าลง channel ที่ close แล้วจะ <strong>panic</strong> ส่วนการอ่านจาก channel ที่ close แล้วได้ zero value โดยไม่ panic ผู้ส่งเป็นคนเดียวที่รู้ว่า "ไม่มีข้อมูลแล้ว"</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-10-timeout-ด้วย-context">ข้อ 10 — Timeout ด้วย Context</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/10_timeout/timeout.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package timeout — เฉลยข้อ 10: context.WithTimeout, select, buffered channel กัน leak</span>
+<span class="t-kw">package</span> timeout
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;context&quot;</span>
+	<span class="t-string">&quot;errors&quot;</span>
+	<span class="t-string">&quot;time&quot;</span>
+)
+
+<span class="t-kw">var</span> ErrNoFuncs = errors.<span class="t-fn">New</span>(<span class="t-string">&quot;no functions given&quot;</span>)
+
+<span class="t-kw">type</span> result <span class="t-kw">struct</span> {
+	val <span class="t-bi">string</span>
+	err <span class="t-bi">error</span>
+}
+
+<span class="t-comment">// CallWithTimeout เรียก fn แต่รอไม่เกิน d</span>
+<span class="t-comment">// ถ้าเกินเวลา ให้คืน error ที่ errors.Is(err, context.DeadlineExceeded) == true</span>
+<span class="t-kw">func</span> <span class="t-fn">CallWithTimeout</span>(ctx context.Context, d time.Duration, fn <span class="t-kw">func</span>(context.Context) (<span class="t-bi">string</span>, <span class="t-bi">error</span>)) (<span class="t-bi">string</span>, <span class="t-bi">error</span>) {
+	ctx, cancel := context.<span class="t-fn">WithTimeout</span>(ctx, d)
+	<span class="t-kw">defer</span> <span class="t-fn">cancel</span>() <span class="t-comment">// คืน resource ของ timer เสมอ</span>
+
+	<span class="t-comment">// buffer 1: ถ้าเรา timeout ไปแล้วไม่มีใครรออ่าน goroutine ก็ยังส่งได้แล้วจบ → ไม่ leak</span>
+	ch := <span class="t-bi">make</span>(<span class="t-kw">chan</span> result, <span class="t-number">1</span>)
+	<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+		v, err := <span class="t-fn">fn</span>(ctx)
+		ch &lt;- result{v, err}
+	}()
+
+	<span class="t-kw">select</span> {
+	<span class="t-kw">case</span> r := &lt;-ch:
+		<span class="t-kw">return</span> r.val, r.err
+	<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():
+		<span class="t-kw">return</span> <span class="t-string">&quot;&quot;</span>, ctx.<span class="t-fn">Err</span>()
+	}
+}
+
+<span class="t-comment">// FirstSuccess รันทุก fn พร้อมกัน คืนผลของตัวแรกที่สำเร็จ แล้ว cancel ตัวที่เหลือ</span>
+<span class="t-comment">// ถ้าล้มเหลวทั้งหมด คืน error ที่รวมทุก error (errors.Join)</span>
+<span class="t-kw">func</span> <span class="t-fn">FirstSuccess</span>(ctx context.Context, fns ...<span class="t-kw">func</span>(context.Context) (<span class="t-bi">string</span>, <span class="t-bi">error</span>)) (<span class="t-bi">string</span>, <span class="t-bi">error</span>) {
+	<span class="t-kw">if</span> <span class="t-bi">len</span>(fns) == <span class="t-number">0</span> {
+		<span class="t-kw">return</span> <span class="t-string">&quot;&quot;</span>, ErrNoFuncs
+	}
+	ctx, cancel := context.<span class="t-fn">WithCancel</span>(ctx)
+	<span class="t-kw">defer</span> <span class="t-fn">cancel</span>() <span class="t-comment">// เมื่อได้ผลแล้ว return → cancel ตัวที่ยังทำงานอยู่</span>
+
+	ch := <span class="t-bi">make</span>(<span class="t-kw">chan</span> result, <span class="t-bi">len</span>(fns)) <span class="t-comment">// buffer เท่าจำนวนงาน → ทุก goroutine ส่งได้ไม่ค้าง</span>
+	<span class="t-kw">for</span> _, fn := <span class="t-kw">range</span> fns {
+		<span class="t-kw">go</span> <span class="t-kw">func</span>() {
+			v, err := <span class="t-fn">fn</span>(ctx)
+			ch &lt;- result{v, err}
+		}()
+	}
+
+	<span class="t-kw">var</span> errs []<span class="t-bi">error</span>
+	<span class="t-kw">for</span> <span class="t-kw">range</span> fns {
+		r := &lt;-ch
+		<span class="t-kw">if</span> r.err == <span class="t-bi">nil</span> {
+			<span class="t-kw">return</span> r.val, <span class="t-bi">nil</span>
+		}
+		errs = <span class="t-bi">append</span>(errs, r.err)
+	}
+	<span class="t-kw">return</span> <span class="t-string">&quot;&quot;</span>, errors.<span class="t-fn">Join</span>(errs...)
+}</code></pre></div></details>
+<h3 id="solutions-หัวใจของข้อนี้-buffered-channel">หัวใจของข้อนี้: buffered channel</h3>
+<div class="code"><span class="code-lang">go</span><pre><code>ch := <span class="t-bi">make</span>(<span class="t-kw">chan</span> result, <span class="t-number">1</span>)   <span class="t-comment">// ✅ buffer 1</span>
+<span class="t-kw">go</span> <span class="t-kw">func</span>() { v, err := <span class="t-fn">fn</span>(ctx); ch &lt;- result{v, err} }()
+
+<span class="t-kw">select</span> {
+<span class="t-kw">case</span> r := &lt;-ch:       <span class="t-kw">return</span> r.val, r.err
+<span class="t-kw">case</span> &lt;-ctx.<span class="t-fn">Done</span>():    <span class="t-kw">return</span> <span class="t-string">&quot;&quot;</span>, ctx.<span class="t-fn">Err</span>()   <span class="t-comment">// เราออกไปก่อนแล้ว...</span>
+}</code></pre></div>
+<p>ถ้า channel เป็น <strong>unbuffered</strong> เมื่อเรา timeout ออกไป จะไม่มีใครอ่าน <code>ch</code> อีก goroutine ที่ทำ <code>ch &lt;- ...</code> จะบล็อกตลอดไป (leak) buffer 1 ช่องทำให้มันส่งได้ทันทีแล้วจบ ส่วนค่าที่ค้างอยู่ใน channel GC จะเก็บให้</p>
+<h3 id="solutions-firstsuccess">FirstSuccess</h3>
+<ul><li><code>context.WithCancel</code> + <code>defer cancel()</code> เมื่อได้คำตอบแล้ว return ทำให้ตัวที่เหลือถูก cancel อัตโนมัติ</li><li>buffer = <code>len(fns)</code> ทุก goroutine ส่งผลได้โดยไม่ค้าง แม้เราจะเลิกอ่านแล้ว</li><li><code>errors.Join</code> (Go 1.20+) รวมหลาย error ไว้ด้วยกัน และ <code>errors.Is</code> ยังหาได้ทุกตัว</li></ul>
+<h3 id="solutions-คำถามต่อยอด-10">คำถามต่อยอด</h3>
+<ul><li><strong>ต้อง <code>defer cancel()</code> ทุกครั้ง</strong> ไม่งั้น timer และ goroutine ภายในของ context จะค้างจนกว่า parent จะถูก cancel (<code>go vet</code> เตือนเรื่อง lostcancel)</li><li><strong>ctx เป็น parameter ตัวแรก</strong> เป็น convention เพื่อให้ cancellation และ deadline ไหลผ่านทุกชั้นของ call stack อย่างชัดเจน</li><li><strong>ไม่ควรเก็บ ctx ไว้ใน struct</strong> เพราะ context ผูกกับ request แต่ละครั้ง ควรส่งผ่าน parameter</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-11-lru-cache-generics">ข้อ 11 — LRU Cache (Generics)</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/11_lru/lru.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package lru — เฉลยข้อ 11: LRU cache ด้วย map + doubly linked list + generics</span>
+<span class="t-kw">package</span> lru
+
+<span class="t-kw">import</span> <span class="t-string">&quot;container/list&quot;</span>
+
+<span class="t-kw">type</span> entry[K <span class="t-bi">comparable</span>, V <span class="t-bi">any</span>] <span class="t-kw">struct</span> {
+	key   K
+	value V
+}
+
+<span class="t-comment">// Cache — Get/Put ต้องเป็น O(1)</span>
+<span class="t-comment">//   - map: หา element จาก key ได้ O(1)</span>
+<span class="t-comment">//   - list: หน้าสุด = ใช้ล่าสุด, ท้ายสุด = ใช้นานที่สุด (ตัวที่จะถูกเตะออก)</span>
+<span class="t-kw">type</span> Cache[K <span class="t-bi">comparable</span>, V <span class="t-bi">any</span>] <span class="t-kw">struct</span> {
+	capacity <span class="t-bi">int</span>
+	ll       *list.List
+	items    <span class="t-kw">map</span>[K]*list.Element
+}
+
+<span class="t-kw">func</span> New[K <span class="t-bi">comparable</span>, V <span class="t-bi">any</span>](capacity <span class="t-bi">int</span>) *Cache[K, V] {
+	<span class="t-kw">return</span> &amp;Cache[K, V]{
+		capacity: capacity,
+		ll:       list.<span class="t-fn">New</span>(),
+		items:    <span class="t-bi">make</span>(<span class="t-kw">map</span>[K]*list.Element, capacity),
+	}
+}
+
+<span class="t-comment">// Get คืนค่าและย้าย key นั้นไปเป็น &quot;ใช้ล่าสุด&quot;</span>
+<span class="t-kw">func</span> (c *Cache[K, V]) <span class="t-fn">Get</span>(key K) (V, <span class="t-bi">bool</span>) {
+	el, ok := c.items[key]
+	<span class="t-kw">if</span> !ok {
+		<span class="t-kw">var</span> zero V <span class="t-comment">// zero value ของ type V ใด ๆ</span>
+		<span class="t-kw">return</span> zero, <span class="t-bi">false</span>
+	}
+	c.ll.<span class="t-fn">MoveToFront</span>(el)
+	<span class="t-kw">return</span> el.Value.(*entry[K, V]).value, <span class="t-bi">true</span>
+}
+
+<span class="t-comment">// Put เพิ่ม/อัปเดตค่า ถ้าเกิน capacity ให้ลบตัวที่ไม่ได้ใช้นานที่สุดออก</span>
+<span class="t-kw">func</span> (c *Cache[K, V]) <span class="t-fn">Put</span>(key K, value V) {
+	<span class="t-kw">if</span> c.capacity &lt;= <span class="t-number">0</span> {
+		<span class="t-kw">return</span>
+	}
+	<span class="t-kw">if</span> el, ok := c.items[key]; ok {
+		el.Value.(*entry[K, V]).value = value
+		c.ll.<span class="t-fn">MoveToFront</span>(el)
+		<span class="t-kw">return</span>
+	}
+	c.items[key] = c.ll.<span class="t-fn">PushFront</span>(&amp;entry[K, V]{key, value})
+	<span class="t-kw">if</span> c.ll.<span class="t-fn">Len</span>() &gt; c.capacity {
+		oldest := c.ll.<span class="t-fn">Back</span>()
+		c.ll.<span class="t-fn">Remove</span>(oldest)
+		<span class="t-bi">delete</span>(c.items, oldest.Value.(*entry[K, V]).key) <span class="t-comment">// ต้องลบจาก map ด้วย ไม่งั้น memory leak</span>
+	}
+}
+
+<span class="t-kw">func</span> (c *Cache[K, V]) <span class="t-fn">Len</span>() <span class="t-bi">int</span> { <span class="t-kw">return</span> c.ll.<span class="t-fn">Len</span>() }</code></pre></div></details>
+<h3 id="solutions-โครงสร้างข้อมูล">โครงสร้างข้อมูล</h3>
+<div class="code"><pre><code>map[K]*list.Element            doubly linked list
+  &quot;a&quot; ──────────────────►  [front] a ⇄ c ⇄ b [back]
+  &quot;b&quot; ──────────────────────────────────────┘  ↑ ตัวที่จะโดนเตะ
+  &quot;c&quot; ─────────────────────────┘</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>Operation</th><th>ขั้นตอน</th><th>Big-O</th></tr></thead><tbody><tr><td>Get</td><td>หาใน map → <code>MoveToFront</code></td><td>O(1)</td></tr><tr><td>Put (มีอยู่แล้ว)</td><td>อัปเดตค่า → <code>MoveToFront</code></td><td>O(1)</td></tr><tr><td>Put (ใหม่)</td><td><code>PushFront</code> → ถ้าเกินให้ลบ <code>Back()</code> <strong>และลบจาก map</strong></td><td>O(1)</td></tr></tbody></table></div>
+<ul><li>ต้องเก็บ <strong>key ไว้ใน element ด้วย</strong> ตอนเตะตัวท้ายจะได้รู้ว่าต้อง <code>delete</code> key ไหนออกจาก map</li><li><code>var zero V</code> ใช้คืน zero value ของ generic type ใด ๆ</li></ul>
+<h3 id="solutions-คำถามต่อยอด-11">คำถามต่อยอด</h3>
+<ul><li><strong>Thread-safe:</strong> ใส่ <code>sync.Mutex</code> แล้ว lock ทั้ง Get และ Put (<strong>Get ก็ต้อง lock</strong> เพราะมันแก้ list ด้วย <code>MoveToFront</code> ใช้ RWMutex ไม่ได้ช่วยในกรณีนี้)</li><li><strong>TTL:</strong> เก็บ <code>expiresAt</code> ใน entry ตรวจตอน Get แล้วลบถ้าหมดอายุ (lazy expiration) อาจมี goroutine คอยกวาดเป็นระยะด้วย</li><li><strong><code>comparable</code> กับ <code>any</code>:</strong> key ของ map ต้องเทียบ <code>==</code> ได้ จึงต้องเป็น <code>comparable</code> ส่วน value เป็นอะไรก็ได้ (<code>any</code>)</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-12-เขียน-test-หาบั๊ก">ข้อ 12 — เขียน Test หาบั๊ก</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/12_testing/palindrome.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package palindrome — เฉลยข้อ 12: เขียน test หาบั๊ก แล้วแก้</span>
+<span class="t-kw">package</span> palindrome
+
+<span class="t-kw">import</span> <span class="t-string">&quot;unicode&quot;</span>
+
+<span class="t-comment">// IsPalindrome คืน true ถ้าอ่านจากหน้าไปหลังและหลังไปหน้าได้เหมือนกัน</span>
+<span class="t-comment">// โดยไม่สนตัวพิมพ์เล็ก/ใหญ่ และข้ามทุกอย่างที่ไม่ใช่ตัวอักษรหรือตัวเลข (รองรับ Unicode)</span>
+<span class="t-comment">//</span>
+<span class="t-comment">// บั๊กของเวอร์ชันเดิม:</span>
+<span class="t-comment">//  1. เทียบทีละ byte → ตัวอักษร UTF-8 หลาย byte (é, ก) พัง</span>
+<span class="t-comment">//  2. ไม่ข้ามช่องว่าง/เครื่องหมายวรรคตอน</span>
+<span class="t-kw">func</span> <span class="t-fn">IsPalindrome</span>(s <span class="t-bi">string</span>) <span class="t-bi">bool</span> {
+	rs := <span class="t-bi">make</span>([]<span class="t-bi">rune</span>, <span class="t-number">0</span>, <span class="t-bi">len</span>(s))
+	<span class="t-kw">for</span> _, r := <span class="t-kw">range</span> s { <span class="t-comment">// range บน string ได้ทีละ rune</span>
+		<span class="t-kw">if</span> unicode.<span class="t-fn">IsLetter</span>(r) || unicode.<span class="t-fn">IsDigit</span>(r) {
+			rs = <span class="t-bi">append</span>(rs, unicode.<span class="t-fn">ToLower</span>(r))
+		}
+	}
+	<span class="t-kw">for</span> i, j := <span class="t-number">0</span>, <span class="t-bi">len</span>(rs)-<span class="t-number">1</span>; i &lt; j; i, j = i+<span class="t-number">1</span>, j-<span class="t-number">1</span> {
+		<span class="t-kw">if</span> rs[i] != rs[j] {
+			<span class="t-kw">return</span> <span class="t-bi">false</span>
+		}
+	}
+	<span class="t-kw">return</span> <span class="t-bi">true</span>
+}</code></pre></div></details>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/12_testing/palindrome_test.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">package</span> palindrome
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;fmt&quot;</span>
+	<span class="t-string">&quot;testing&quot;</span>
+)
+
+<span class="t-comment">// Table-driven test + subtest (t.Run) — สไตล์มาตรฐานของ Go</span>
+<span class="t-kw">func</span> <span class="t-fn">TestIsPalindrome</span>(t *testing.T) {
+	tests := []<span class="t-kw">struct</span> {
+		name <span class="t-bi">string</span>
+		in   <span class="t-bi">string</span>
+		want <span class="t-bi">bool</span>
+	}{
+		{<span class="t-string">&quot;empty&quot;</span>, <span class="t-string">&quot;&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;single char&quot;</span>, <span class="t-string">&quot;a&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;simple&quot;</span>, <span class="t-string">&quot;racecar&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;not palindrome&quot;</span>, <span class="t-string">&quot;golang&quot;</span>, <span class="t-bi">false</span>},
+		{<span class="t-string">&quot;mixed case&quot;</span>, <span class="t-string">&quot;Level&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;with spaces and punctuation&quot;</span>, <span class="t-string">&quot;A man, a plan, a canal: Panama&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;digits&quot;</span>, <span class="t-string">&quot;12321&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;multi-byte unicode&quot;</span>, <span class="t-string">&quot;été&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;thai&quot;</span>, <span class="t-string">&quot;กขก&quot;</span>, <span class="t-bi">true</span>},
+		{<span class="t-string">&quot;only punctuation&quot;</span>, <span class="t-string">&quot;!!&quot;</span>, <span class="t-bi">true</span>},
+	}
+	<span class="t-kw">for</span> _, tt := <span class="t-kw">range</span> tests {
+		t.<span class="t-fn">Run</span>(tt.name, <span class="t-kw">func</span>(t *testing.T) {
+			t.<span class="t-fn">Parallel</span>()
+			<span class="t-kw">if</span> got := <span class="t-fn">IsPalindrome</span>(tt.in); got != tt.want {
+				t.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;IsPalindrome(%q) = %v; want %v&quot;</span>, tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+<span class="t-comment">// Benchmark — รันด้วย: go test -bench=. -benchmem ./solutions/12_testing</span>
+<span class="t-kw">func</span> <span class="t-fn">BenchmarkIsPalindrome</span>(b *testing.B) {
+	s := <span class="t-string">&quot;A man, a plan, a canal: Panama&quot;</span>
+	<span class="t-kw">for</span> b.<span class="t-fn">Loop</span>() { <span class="t-comment">// Go 1.24+ (เวอร์ชันเก่าใช้ for i := 0; i &lt; b.N; i++)</span>
+		<span class="t-fn">IsPalindrome</span>(s)
+	}
+}
+
+<span class="t-comment">// Example — เป็นทั้ง test (เทียบกับ // Output:) และเอกสารใน go doc</span>
+<span class="t-kw">func</span> <span class="t-fn">ExampleIsPalindrome</span>() {
+	fmt.<span class="t-fn">Println</span>(<span class="t-fn">IsPalindrome</span>(<span class="t-string">&quot;Never odd or even&quot;</span>))
+	<span class="t-comment">// Output: true</span>
+}
+
+<span class="t-comment">// Fuzz test — รันด้วย: go test -fuzz=FuzzIsPalindrome ./solutions/12_testing</span>
+<span class="t-comment">// property: s + reverse(s) ต้องเป็น palindrome เสมอ</span>
+<span class="t-kw">func</span> <span class="t-fn">FuzzIsPalindrome</span>(f *testing.F) {
+	f.<span class="t-fn">Add</span>(<span class="t-string">&quot;hello&quot;</span>)
+	f.<span class="t-fn">Add</span>(<span class="t-string">&quot;สวัสดี&quot;</span>)
+	f.<span class="t-fn">Fuzz</span>(<span class="t-kw">func</span>(t *testing.T, s <span class="t-bi">string</span>) {
+		r := []<span class="t-bi">rune</span>(s)
+		<span class="t-kw">for</span> i, j := <span class="t-number">0</span>, <span class="t-bi">len</span>(r)-<span class="t-number">1</span>; i &lt; j; i, j = i+<span class="t-number">1</span>, j-<span class="t-number">1</span> {
+			r[i], r[j] = r[j], r[i]
+		}
+		<span class="t-kw">if</span> !<span class="t-fn">IsPalindrome</span>(s + <span class="t-bi">string</span>(r)) {
+			t.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;IsPalindrome(%q) = false&quot;</span>, s+<span class="t-bi">string</span>(r))
+		}
+	})
+}</code></pre></div></details>
+<h3 id="solutions-บั๊กในโค้ดเดิม">บั๊กในโค้ดเดิม</h3>
+<ol><li><strong>เทียบทีละ byte:</strong> <code>&quot;été&quot;</code> = <code>c3 a9 74 c3 a9</code> เทียบ byte แรก <code>c3</code> กับ byte สุดท้าย <code>a9</code> ไม่เท่ากัน จึงได้ false ทั้งที่เป็น palindrome</li><li><strong>ไม่ข้ามช่องว่างและเครื่องหมาย:</strong> <code>&quot;A man, a plan...&quot;</code> จึงได้ false</li></ol>
+<h3 id="solutions-เครื่องมือ-test-ของ-go-ที่ควรรู้">เครื่องมือ test ของ Go ที่ควรรู้</h3>
+<div class="table-wrap"><table><thead><tr><th>อย่าง</th><th>ชื่อฟังก์ชัน</th><th>รันด้วย</th></tr></thead><tbody><tr><td>Unit test</td><td><code>TestXxx(t *testing.T)</code></td><td><code>go test</code></td></tr><tr><td>Subtest</td><td><code>t.Run(name, func(t *testing.T){...})</code></td><td><code>go test -run TestX/name</code></td></tr><tr><td>Benchmark</td><td><code>BenchmarkXxx(b *testing.B)</code> + <code>b.Loop()</code></td><td><code>go test -bench=. -benchmem</code></td></tr><tr><td>Example</td><td><code>ExampleXxx()</code> + <code>// Output:</code></td><td><code>go test</code> (และแสดงใน <code>go doc</code>)</td></tr><tr><td>Fuzz</td><td><code>FuzzXxx(f *testing.F)</code></td><td><code>go test -fuzz=FuzzXxx</code></td></tr><tr><td>Coverage</td><td>—</td><td><code>go test -cover</code> / <code>-coverprofile=c.out</code></td></tr></tbody></table></div>
+<h3 id="solutions-คำถามต่อยอด-12">คำถามต่อยอด</h3>
+<ul><li><strong>Mock:</strong> รับ dependency เป็น interface เล็ก ๆ (ประกาศฝั่งผู้ใช้) แล้วส่ง fake struct เข้าไปตอน test สำหรับ HTTP ใช้ <code>httptest.NewServer</code></li><li><strong><code>t.Helper()</code></strong> ทำให้บรรทัดที่รายงาน error ชี้ไปที่ผู้เรียก helper <strong><code>t.Cleanup()</code></strong> ลงทะเบียนงานเก็บกวาดหลัง test จบ <strong><code>t.Parallel()</code></strong> ให้ subtest รันขนานกัน</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-13-ใช้-memory-อย่างมีประสิทธิภาพ">ข้อ 13 — ใช้ Memory อย่างมีประสิทธิภาพ</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/13_memory/memory.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package memory — เฉลยข้อ 13: preallocation, strings.Builder, slice ค้าง backing array</span>
+<span class="t-kw">package</span> memory
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;strconv&quot;</span>
+	<span class="t-string">&quot;strings&quot;</span>
+)
+
+<span class="t-comment">// Squares คืน [0, 1, 4, 9, ...] จำนวน n ตัว — ต้อง allocate แค่ 1 ครั้ง</span>
+<span class="t-comment">// append ลง slice ที่ cap ไม่พอ → Go ต้องสร้าง array ใหม่ใหญ่ขึ้นแล้ว copy (หลายรอบ)</span>
+<span class="t-kw">func</span> <span class="t-fn">Squares</span>(n <span class="t-bi">int</span>) []<span class="t-bi">int</span> {
+	out := <span class="t-bi">make</span>([]<span class="t-bi">int</span>, <span class="t-number">0</span>, n) <span class="t-comment">// จอง cap ไว้ครั้งเดียว</span>
+	<span class="t-kw">for</span> i := <span class="t-kw">range</span> n {
+		out = <span class="t-bi">append</span>(out, i*i)
+	}
+	<span class="t-kw">return</span> out
+}
+
+<span class="t-comment">// JoinInts ต่อตัวเลขด้วย sep เช่น JoinInts([1 2 3], &quot;,&quot;) = &quot;1,2,3&quot;</span>
+<span class="t-comment">// ห้ามใช้ s += ... ในลูป เพราะ string immutable → สร้าง string ใหม่ทุกรอบ (O(n^2))</span>
+<span class="t-kw">func</span> <span class="t-fn">JoinInts</span>(nums []<span class="t-bi">int</span>, sep <span class="t-bi">string</span>) <span class="t-bi">string</span> {
+	<span class="t-kw">if</span> <span class="t-bi">len</span>(nums) == <span class="t-number">0</span> {
+		<span class="t-kw">return</span> <span class="t-string">&quot;&quot;</span>
+	}
+	<span class="t-kw">var</span> b strings.Builder
+	b.<span class="t-fn">Grow</span>(<span class="t-bi">len</span>(nums) * (<span class="t-number">3</span> + <span class="t-bi">len</span>(sep))) <span class="t-comment">// ประมาณขนาดไว้ก่อน</span>
+	<span class="t-kw">var</span> buf [<span class="t-number">20</span>]<span class="t-bi">byte</span>                   <span class="t-comment">// พอสำหรับ int64 ทุกค่า, อยู่บน stack</span>
+	<span class="t-kw">for</span> i, n := <span class="t-kw">range</span> nums {
+		<span class="t-kw">if</span> i &gt; <span class="t-number">0</span> {
+			b.<span class="t-fn">WriteString</span>(sep)
+		}
+		b.<span class="t-fn">Write</span>(strconv.<span class="t-fn">AppendInt</span>(buf[:<span class="t-number">0</span>], <span class="t-bi">int64</span>(n), <span class="t-number">10</span>))
+	}
+	<span class="t-kw">return</span> b.<span class="t-fn">String</span>()
+}
+
+<span class="t-comment">// Head คืน n byte แรกของ data (ถ้า n &gt; len ให้คืนทั้งหมด)</span>
+<span class="t-comment">// ผลลัพธ์ต้อง &quot;ไม่แชร์&quot; backing array กับ data</span>
+<span class="t-comment">//</span>
+<span class="t-comment">// ถ้าคืน data[:n] ตรง ๆ: แม้จะใช้แค่ 10 byte แต่ GC เก็บ array ขนาด 100MB ไม่ได้</span>
+<span class="t-comment">// เพราะยังมี slice ชี้อยู่ → memory leak แบบเงียบ ๆ</span>
+<span class="t-kw">func</span> <span class="t-fn">Head</span>(data []<span class="t-bi">byte</span>, n <span class="t-bi">int</span>) []<span class="t-bi">byte</span> {
+	n = <span class="t-bi">min</span>(n, <span class="t-bi">len</span>(data))
+	out := <span class="t-bi">make</span>([]<span class="t-bi">byte</span>, n)
+	<span class="t-bi">copy</span>(out, data)
+	<span class="t-kw">return</span> out
+}</code></pre></div></details>
+<h3 id="solutions-1-preallocate">1. Preallocate</h3>
+<p><code>var out []int</code> แล้ว append ไป 1000 ครั้ง ต้องขยาย array ~10 รอบ (ทุกรอบ allocate ใหม่และ copy) แต่ <code>make([]int, 0, n)</code> allocate ครั้งเดียวจบ</p>
+<h3 id="solutions-2-strings-builder">2. strings.Builder</h3>
+<p>string ใน Go <strong>immutable</strong> ทุกครั้งที่ <code>s += x</code> จะสร้าง string ใหม่และ copy ของเดิมทั้งหมด ได้ O(n²) <code>strings.Builder</code> ต่อลง <code>[]byte</code> ภายในแล้วแปลงเป็น string ตอนท้าย<strong>โดยไม่ copy</strong> ส่วน <code>strconv.AppendInt</code> เขียนตัวเลขลง buffer บน stack ไม่ต้องสร้าง string ชั่วคราว</p>
+<h3 id="solutions-3-sub-slice-ค้าง-array-ใหญ่">3. Sub-slice ค้าง array ใหญ่</h3>
+<div class="code"><span class="code-lang">go</span><pre><code>big := <span class="t-fn">readFile</span>()      <span class="t-comment">// 100 MB</span>
+head := big[:<span class="t-number">10</span>]       <span class="t-comment">// ❌ head ยังชี้ array 100MB → GC เก็บไม่ได้</span>
+head := <span class="t-bi">make</span>([]<span class="t-bi">byte</span>, <span class="t-number">10</span>); <span class="t-bi">copy</span>(head, big) <span class="t-comment">// ✅ เหลือแค่ 10 byte</span></code></pre></div>
+<h3 id="solutions-คำถามต่อยอด-13">คำถามต่อยอด</h3>
+<ul><li><strong>Stack กับ Heap:</strong> stack ต่อ goroutine เร็วมากและคืนอัตโนมัติเมื่อฟังก์ชันจบ heap ต้องให้ GC จัดการ compiler ตัดสินว่าจะวางตัวแปรที่ไหนด้วย <strong>escape analysis</strong> (ถ้าตัวแปรถูกอ้างถึงหลังฟังก์ชันจบ เช่น return pointer จะ escape ไป heap) ดูผลได้ด้วย <code>go build -gcflags=-m</code></li><li><strong>Profile memory:</strong> <code>go test -memprofile mem.out</code> หรือ <code>import _ &quot;net/http/pprof&quot;</code> แล้วใช้ <code>go tool pprof -http=: mem.out</code></li><li><strong><code>sync.Pool</code>:</strong> ใช้ reuse object ชั่วคราวที่สร้างบ่อย เช่น buffer ลดภาระของ GC</li></ul>
+<hr>
+<h2 id="solutions-ข้อ-14-rest-api-ด้วย-net-http">ข้อ 14 — REST API ด้วย net/http</h2>
+<details class="full-code"><summary>ดูโค้ดเต็ม · <code>solutions/14_http/server.go</code></summary><div class="code"><span class="code-lang">go</span><pre><code><span class="t-comment">// Package todoapi — เฉลยข้อ 14: REST API ด้วย net/http + JSON + ทดสอบด้วย httptest</span>
+<span class="t-kw">package</span> todoapi
+
+<span class="t-kw">import</span> (
+	<span class="t-string">&quot;encoding/json&quot;</span>
+	<span class="t-string">&quot;net/http&quot;</span>
+	<span class="t-string">&quot;sort&quot;</span>
+	<span class="t-string">&quot;strconv&quot;</span>
+	<span class="t-string">&quot;strings&quot;</span>
+	<span class="t-string">&quot;sync&quot;</span>
+)
+
+<span class="t-kw">type</span> Todo <span class="t-kw">struct</span> {
+	ID    <span class="t-bi">int</span>    <span class="t-string">`json:&quot;id&quot;`</span>
+	Title <span class="t-bi">string</span> <span class="t-string">`json:&quot;title&quot;`</span>
+	Done  <span class="t-bi">bool</span>   <span class="t-string">`json:&quot;done&quot;`</span>
+}
+
+<span class="t-kw">type</span> Server <span class="t-kw">struct</span> {
+	mu     sync.RWMutex <span class="t-comment">// handler ถูกเรียกพร้อมกันหลาย goroutine (1 request = 1 goroutine)</span>
+	todos  <span class="t-kw">map</span>[<span class="t-bi">int</span>]Todo
+	nextID <span class="t-bi">int</span>
+	mux    *http.ServeMux
+}
+
+<span class="t-kw">func</span> <span class="t-fn">NewServer</span>() *Server {
+	s := &amp;Server{todos: <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">int</span>]Todo), nextID: <span class="t-number">1</span>, mux: http.<span class="t-fn">NewServeMux</span>()}
+	<span class="t-comment">// Go 1.22+ รองรับ method และ path parameter ใน pattern</span>
+	s.mux.<span class="t-fn">HandleFunc</span>(<span class="t-string">&quot;GET /todos&quot;</span>, s.listTodos)
+	s.mux.<span class="t-fn">HandleFunc</span>(<span class="t-string">&quot;POST /todos&quot;</span>, s.createTodo)
+	s.mux.<span class="t-fn">HandleFunc</span>(<span class="t-string">&quot;GET /todos/{id}&quot;</span>, s.getTodo)
+	s.mux.<span class="t-fn">HandleFunc</span>(<span class="t-string">&quot;DELETE /todos/{id}&quot;</span>, s.deleteTodo)
+	<span class="t-kw">return</span> s
+}
+
+<span class="t-comment">// ServeHTTP ทำให้ *Server เป็น http.Handler</span>
+<span class="t-kw">func</span> (s *Server) <span class="t-fn">ServeHTTP</span>(w http.ResponseWriter, r *http.Request) {
+	s.mux.<span class="t-fn">ServeHTTP</span>(w, r)
+}
+
+<span class="t-kw">func</span> <span class="t-fn">writeJSON</span>(w http.ResponseWriter, status <span class="t-bi">int</span>, v <span class="t-bi">any</span>) {
+	w.<span class="t-fn">Header</span>().<span class="t-fn">Set</span>(<span class="t-string">&quot;Content-Type&quot;</span>, <span class="t-string">&quot;application/json&quot;</span>)
+	w.<span class="t-fn">WriteHeader</span>(status)
+	_ = json.<span class="t-fn">NewEncoder</span>(w).<span class="t-fn">Encode</span>(v)
+}
+
+<span class="t-kw">func</span> <span class="t-fn">writeError</span>(w http.ResponseWriter, status <span class="t-bi">int</span>, msg <span class="t-bi">string</span>) {
+	<span class="t-fn">writeJSON</span>(w, status, <span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">string</span>{<span class="t-string">&quot;error&quot;</span>: msg})
+}
+
+<span class="t-comment">// GET /todos → 200 + array เรียงตาม id (ว่างต้องเป็น [] ไม่ใช่ null)</span>
+<span class="t-kw">func</span> (s *Server) <span class="t-fn">listTodos</span>(w http.ResponseWriter, r *http.Request) {
+	s.mu.<span class="t-fn">RLock</span>()
+	list := <span class="t-bi">make</span>([]Todo, <span class="t-number">0</span>, <span class="t-bi">len</span>(s.todos)) <span class="t-comment">// make → encode เป็น [] (nil slice จะได้ null)</span>
+	<span class="t-kw">for</span> _, t := <span class="t-kw">range</span> s.todos {
+		list = <span class="t-bi">append</span>(list, t)
+	}
+	s.mu.<span class="t-fn">RUnlock</span>()
+	sort.<span class="t-fn">Slice</span>(list, <span class="t-kw">func</span>(i, j <span class="t-bi">int</span>) <span class="t-bi">bool</span> { <span class="t-kw">return</span> list[i].ID &lt; list[j].ID })
+	<span class="t-fn">writeJSON</span>(w, http.StatusOK, list)
+}
+
+<span class="t-comment">// POST /todos {&quot;title&quot;: &quot;...&quot;} → 201 + todo ที่สร้าง</span>
+<span class="t-comment">// JSON พัง หรือ title ว่าง → 400 {&quot;error&quot;: &quot;...&quot;}</span>
+<span class="t-kw">func</span> (s *Server) <span class="t-fn">createTodo</span>(w http.ResponseWriter, r *http.Request) {
+	<span class="t-kw">var</span> in <span class="t-kw">struct</span> {
+		Title <span class="t-bi">string</span> <span class="t-string">`json:&quot;title&quot;`</span>
+	}
+	<span class="t-kw">if</span> err := json.<span class="t-fn">NewDecoder</span>(r.Body).<span class="t-fn">Decode</span>(&amp;in); err != <span class="t-bi">nil</span> {
+		<span class="t-fn">writeError</span>(w, http.StatusBadRequest, <span class="t-string">&quot;invalid JSON&quot;</span>)
+		<span class="t-kw">return</span>
+	}
+	in.Title = strings.<span class="t-fn">TrimSpace</span>(in.Title)
+	<span class="t-kw">if</span> in.Title == <span class="t-string">&quot;&quot;</span> {
+		<span class="t-fn">writeError</span>(w, http.StatusBadRequest, <span class="t-string">&quot;title is required&quot;</span>)
+		<span class="t-kw">return</span>
+	}
+	s.mu.<span class="t-fn">Lock</span>()
+	t := Todo{ID: s.nextID, Title: in.Title}
+	s.todos[t.ID] = t
+	s.nextID++
+	s.mu.<span class="t-fn">Unlock</span>()
+	<span class="t-fn">writeJSON</span>(w, http.StatusCreated, t)
+}
+
+<span class="t-comment">// parseID อ่าน {id} จาก path — ไม่ใช่ตัวเลข → 400</span>
+<span class="t-kw">func</span> <span class="t-fn">parseID</span>(w http.ResponseWriter, r *http.Request) (<span class="t-bi">int</span>, <span class="t-bi">bool</span>) {
+	id, err := strconv.<span class="t-fn">Atoi</span>(r.<span class="t-fn">PathValue</span>(<span class="t-string">&quot;id&quot;</span>))
+	<span class="t-kw">if</span> err != <span class="t-bi">nil</span> {
+		<span class="t-fn">writeError</span>(w, http.StatusBadRequest, <span class="t-string">&quot;invalid id&quot;</span>)
+		<span class="t-kw">return</span> <span class="t-number">0</span>, <span class="t-bi">false</span>
+	}
+	<span class="t-kw">return</span> id, <span class="t-bi">true</span>
+}
+
+<span class="t-comment">// GET /todos/{id} → 200 / 404</span>
+<span class="t-kw">func</span> (s *Server) <span class="t-fn">getTodo</span>(w http.ResponseWriter, r *http.Request) {
+	id, ok := <span class="t-fn">parseID</span>(w, r)
+	<span class="t-kw">if</span> !ok {
+		<span class="t-kw">return</span>
+	}
+	s.mu.<span class="t-fn">RLock</span>()
+	t, found := s.todos[id]
+	s.mu.<span class="t-fn">RUnlock</span>()
+	<span class="t-kw">if</span> !found {
+		<span class="t-fn">writeError</span>(w, http.StatusNotFound, <span class="t-string">&quot;todo not found&quot;</span>)
+		<span class="t-kw">return</span>
+	}
+	<span class="t-fn">writeJSON</span>(w, http.StatusOK, t)
+}
+
+<span class="t-comment">// DELETE /todos/{id} → 204 (ไม่มี body) / 404</span>
+<span class="t-kw">func</span> (s *Server) <span class="t-fn">deleteTodo</span>(w http.ResponseWriter, r *http.Request) {
+	id, ok := <span class="t-fn">parseID</span>(w, r)
+	<span class="t-kw">if</span> !ok {
+		<span class="t-kw">return</span>
+	}
+	s.mu.<span class="t-fn">Lock</span>()
+	_, found := s.todos[id]
+	<span class="t-bi">delete</span>(s.todos, id)
+	s.mu.<span class="t-fn">Unlock</span>()
+	<span class="t-kw">if</span> !found {
+		<span class="t-fn">writeError</span>(w, http.StatusNotFound, <span class="t-string">&quot;todo not found&quot;</span>)
+		<span class="t-kw">return</span>
+	}
+	w.<span class="t-fn">WriteHeader</span>(http.StatusNoContent)
+}</code></pre></div></details>
+<h3 id="solutions-แนวคิด-6">แนวคิด</h3>
+<ul><li><strong>Routing ของ Go 1.22+:</strong> <code>mux.HandleFunc(&quot;GET /todos/{id}&quot;, h)</code> แล้วอ่าน path parameter ด้วย <code>r.PathValue(&quot;id&quot;)</code> ถ้า method ไม่ตรง mux จะตอบ 405 ให้เอง</li><li><strong>Concurrency:</strong> <code>net/http</code> สร้าง goroutine ใหม่ต่อ request จึงต้องใช้ <code>sync.RWMutex</code> ป้องกัน map</li><li><strong><code>[]</code> กับ <code>null</code>:</strong> nil slice ถูก encode เป็น <code>null</code> ต้อง <code>make([]Todo, 0)</code></li><li><strong>ลำดับการเขียน header:</strong> ต้อง <code>w.Header().Set(...)</code> <strong>ก่อน</strong> <code>w.WriteHeader(status)</code> เพราะหลังจากนั้น header จะถูกส่งไปแล้ว</li><li><strong>Test ด้วย <code>httptest</code>:</strong> <code>httptest.NewRequest</code> + <code>httptest.NewRecorder</code> เรียก <code>ServeHTTP</code> ตรง ๆ ได้โดยไม่ต้องเปิด port</li></ul>
+<h3 id="solutions-คำถามต่อยอด-14">คำถามต่อยอด</h3>
+<ul><li><strong>Middleware:</strong></li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> <span class="t-fn">Logging</span>(next http.Handler) http.Handler {
+    <span class="t-kw">return</span> http.<span class="t-fn">HandlerFunc</span>(<span class="t-kw">func</span>(w http.ResponseWriter, r *http.Request) {
+        start := time.<span class="t-fn">Now</span>()
+        next.<span class="t-fn">ServeHTTP</span>(w, r)
+        log.<span class="t-fn">Printf</span>(<span class="t-string">&quot;%s %s %v&quot;</span>, r.Method, r.URL.Path, time.<span class="t-fn">Since</span>(start))
+    })
+}</code></pre></div>
+<ul><li><strong>Graceful shutdown:</strong> <code>signal.NotifyContext(ctx, os.Interrupt)</code> → เมื่อได้สัญญาณ เรียก <code>srv.Shutdown(ctx)</code> เพื่อหยุดรับ request ใหม่และรอ request ที่ค้างอยู่ให้เสร็จ</li><li><strong>Timeout ที่ควรตั้ง:</strong> <code>ReadHeaderTimeout</code>, <code>ReadTimeout</code>, <code>WriteTimeout</code>, <code>IdleTimeout</code> (ค่า default คือไม่มี timeout เลย เสี่ยงโดนโจมตีแบบ Slowloris)</li><li><strong>Layer:</strong> handler (HTTP ↔ struct) → service (business logic) → repository (interface ของ storage) test แต่ละชั้นแยกกันด้วย fake repository</li></ul></article>
+<article class="panel prose" id="panel-theory" data-panel="theory"><h1 id="theory-คำถามทฤษฎี-golang-50-ข้อ-พร้อมคำตอบ">คำถามทฤษฎี Golang 50 ข้อ (พร้อมคำตอบ)</h1>
+<p>แปลและเรียบเรียงจาก <a href="https://roadmap.sh/questions/golang" target="_blank" rel="noopener">roadmap.sh/questions/golang</a> พร้อมเพิ่มรายละเอียดที่ interviewer มักถามต่อ <strong>วิธีฝึก:</strong> อ่านคำถาม ตอบออกเสียงเองก่อน แล้วค่อยกดดูคำตอบ</p>
+<hr>
+<h2 id="theory-ระดับเริ่มต้น-beginner">ระดับเริ่มต้น (Beginner)</h2>
+<h3 id="theory-1-go-คืออะไร-มีจุดเด่นอะไรบ้าง">1. Go คืออะไร มีจุดเด่นอะไรบ้าง?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ภาษา open-source จาก Google (2009) เป็น statically typed และ compile เป็น native binary ไฟล์เดียว จุดเด่นคือ</p>
+<ul><li><strong>เรียบง่าย:</strong> keyword น้อย (25 ตัว) อ่านง่าย มี <code>gofmt</code> จัด format ให้เป็นมาตรฐานเดียวกัน</li><li><strong>Concurrency ในตัวภาษา:</strong> goroutine + channel</li><li><strong>มี Garbage Collector</strong> ไม่ต้องจัดการ memory เอง</li><li><strong>Compile เร็ว</strong> และ cross-compile ง่าย (<code>GOOS=linux GOARCH=arm64 go build</code>)</li><li><strong>Standard library ครบ</strong> (<code>net/http</code>, <code>encoding/json</code>, <code>testing</code>) พร้อมเครื่องมือในตัว เช่น <code>go test</code>, <code>go vet</code>, <code>pprof</code>, race detector</li></ul>
+</details>
+<h3 id="theory-2-package-main-และ-func-main-มีไว้ทำอะไร">2. <code>package main</code> และ <code>func main()</code> มีไว้ทำอะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><code>package main</code> บอก compiler ว่า package นี้ build เป็น <strong>โปรแกรมที่รันได้</strong> (executable) ถ้าเป็นชื่ออื่นจะเป็น library</li><li><code>func main()</code> คือ <strong>จุดเริ่มต้น</strong> ของโปรแกรม ไม่รับ argument และไม่คืนค่า (อ่าน argument ผ่าน <code>os.Args</code> และกำหนด exit code ด้วย <code>os.Exit</code>)</li><li>ลำดับการทำงาน: init ตัวแปรระดับ package → <code>func init()</code> ของทุก package → <code>main()</code> เมื่อ <code>main</code> จบ โปรแกรมจบทันทีโดย<strong>ไม่รอ goroutine อื่น</strong></li></ul>
+</details>
+<h3 id="theory-3-ประกาศตัวแปรได้กี่แบบ-และ-zero-value-คืออะไร">3. ประกาศตัวแปรได้กี่แบบ และ zero value คืออะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">var</span> a <span class="t-bi">int</span>          <span class="t-comment">// zero value = 0</span>
+<span class="t-kw">var</span> b = <span class="t-string">&quot;hi&quot;</span>       <span class="t-comment">// อนุมาน type</span>
+c := <span class="t-number">3.14</span>          <span class="t-comment">// short declaration (ใช้ได้เฉพาะในฟังก์ชัน)</span>
+<span class="t-kw">const</span> Pi = <span class="t-number">3.14159</span></code></pre></div>
+<p><strong>Zero value</strong> คือค่าเริ่มต้นเมื่อไม่ได้กำหนดค่า Go ไม่มีตัวแปรที่ "ไม่ได้ initialize"</p>
+<div class="table-wrap"><table><thead><tr><th>Type</th><th>Zero value</th></tr></thead><tbody><tr><td>ตัวเลข</td><td><code>0</code></td></tr><tr><td><code>bool</code></td><td><code>false</code></td></tr><tr><td><code>string</code></td><td><code>&quot;&quot;</code></td></tr><tr><td>pointer, slice, map, channel, func, interface</td><td><code>nil</code></td></tr><tr><td>struct</td><td>ทุก field เป็น zero value ของตัวเอง</td></tr></tbody></table></div>
+<p>แนวทางที่ดีคือออกแบบ type ให้ zero value ใช้งานได้เลย เช่น <code>sync.Mutex</code>, <code>bytes.Buffer</code></p>
+</details>
+<h3 id="theory-4-อธิบาย-data-type-พื้นฐานของ-go">4. อธิบาย data type พื้นฐานของ Go</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>Boolean:</strong> <code>bool</code></li><li><strong>Integer:</strong> <code>int</code>, <code>int8/16/32/64</code>, <code>uint...</code>, <code>uintptr</code> (<code>int</code> มีขนาด 64 bit บนระบบ 64-bit)</li><li><strong>Float:</strong> <code>float32</code>, <code>float64</code></li><li><strong>Complex:</strong> <code>complex64</code>, <code>complex128</code></li><li><strong>String:</strong> byte sequence แบบ UTF-8 แก้ไขไม่ได้ (immutable)</li><li><strong>Alias:</strong> <code>byte</code> = <code>uint8</code>, <code>rune</code> = <code>int32</code> (ใช้แทน Unicode code point)</li></ul>
+<p>Go เป็น <strong>strongly typed</strong> จึงบวก <code>int</code> กับ <code>int64</code> ตรง ๆ ไม่ได้ ต้องแปลงเองเสมอ</p>
+</details>
+<h3 id="theory-5-pointer-คืออะไร">5. Pointer คืออะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ตัวแปรที่เก็บ <strong>address</strong> ของตัวแปรอื่น</p>
+<div class="code"><span class="code-lang">go</span><pre><code>x := <span class="t-number">10</span>
+p := &amp;x     <span class="t-comment">// p เป็น *int ชี้ไปที่ x</span>
+*p = <span class="t-number">20</span>     <span class="t-comment">// dereference → x = 20</span></code></pre></div>
+<p>ใช้เมื่อต้องการ (1) แก้ค่าต้นฉบับในฟังก์ชัน (2) ไม่อยาก copy struct ขนาดใหญ่ (3) แทน "ไม่มีค่า" ด้วย <code>nil</code> Go ไม่มี pointer arithmetic และ return pointer ของตัวแปร local ได้อย่างปลอดภัย ดูฝึกได้ในข้อ 02</p>
+</details>
+<h3 id="theory-6-composite-data-type-มีอะไรบ้าง">6. Composite data type มีอะไรบ้าง?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>Array</strong> <code>[3]int{1,2,3}</code> ขนาดคงที่ (ขนาดเป็นส่วนหนึ่งของ type) เป็น value type</li><li><strong>Slice</strong> <code>[]int{1,2,3}</code> ขนาดยืดได้ เป็น header <code>{ptr, len, cap}</code> ที่ชี้ไปยัง array</li><li><strong>Map</strong> <code>map[string]int{&quot;a&quot;: 1}</code> เป็น hash table</li><li><strong>Struct</strong> รวม field หลายชนิดเข้าด้วยกัน</li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> User <span class="t-kw">struct</span> { Name <span class="t-bi">string</span>; Age <span class="t-bi">int</span> }
+u := User{Name: <span class="t-string">&quot;Tah&quot;</span>, Age: <span class="t-number">30</span>}
+fmt.<span class="t-fn">Println</span>(u.Name)</code></pre></div>
+<p>ดูฝึกได้ในข้อ 03</p>
+</details>
+<h3 id="theory-7-จัดการ-dependency-ใน-go-ยังไง">7. จัดการ dependency ใน Go ยังไง?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ใช้ <strong>Go Modules</strong></p>
+<div class="code"><span class="code-lang">bash</span><pre><code>go mod init github.com/me/app     <span class="t-comment"># สร้าง go.mod</span>
+go get github.com/lib/pq@v1.10.9  <span class="t-comment"># เพิ่ม/อัปเดต dependency</span>
+go mod tidy                       <span class="t-comment"># ลบตัวที่ไม่ใช้ และเพิ่มตัวที่ขาด</span></code></pre></div>
+<ul><li><code>go.mod</code> เก็บชื่อ module, เวอร์ชัน Go และ dependency ที่ใช้</li><li><code>go.sum</code> เก็บ checksum ไว้ยืนยันว่าโค้ดที่โหลดมาไม่ถูกแก้</li><li>commit ทั้งสองไฟล์เข้า git เพื่อให้ build ได้ผลเหมือนกันทุกเครื่อง</li></ul>
+</details>
+<h3 id="theory-8-package-testing-มีบทบาทอะไร">8. package <code>testing</code> มีบทบาทอะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>เป็นเครื่องมือ test ในตัวภาษา ไม่ต้องติดตั้ง framework เพิ่ม</p>
+<ul><li>ไฟล์ลงท้าย <code>_test.go</code> และฟังก์ชันชื่อ <code>TestXxx(t *testing.T)</code></li><li>รันด้วย <code>go test ./...</code></li><li>รองรับ benchmark (<code>BenchmarkXxx</code>), example (<code>ExampleXxx</code>), fuzz (<code>FuzzXxx</code>), coverage (<code>-cover</code>) และ race detector (<code>-race</code>)</li><li>สไตล์ที่นิยมคือ <strong>table-driven test</strong> + <code>t.Run</code></li></ul>
+<p>ดูฝึกได้ในข้อ 12</p>
+</details>
+<h3 id="theory-9-go-จัดการ-memory-อย่างไร">9. Go จัดการ memory อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>อัตโนมัติ:</strong> compiler ตัดสินว่าจะวางตัวแปรบน <strong>stack</strong> หรือ <strong>heap</strong> ด้วย escape analysis</li><li><strong>Garbage Collector</strong> แบบ concurrent tri-color mark-and-sweep คืน memory บน heap ที่ไม่มีใครอ้างถึงแล้ว โดยทำงานไปพร้อมกับโปรแกรม ทำให้ pause สั้นมาก (ระดับ sub-millisecond)</li><li>ปรับจูนได้ด้วย <code>GOGC</code> (ความถี่ของ GC) และ <code>GOMEMLIMIT</code> (เพดาน memory แบบ soft limit)</li></ul>
+</details>
+<h3 id="theory-10-การเรียกฟังก์ชันใน-go-ทำงานอย่างไร">10. การเรียกฟังก์ชันใน Go ทำงานอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li>Go ส่ง argument แบบ <strong>pass by value เสมอ</strong> คือ copy ค่าไปให้ฟังก์ชัน</li><li>ถ้าส่ง pointer ก็คือ copy address ทำให้แก้ค่าต้นฉบับได้</li><li>slice, map และ channel มี pointer อยู่ข้างใน การ copy จึงยังเห็นข้อมูลชุดเดียวกัน (แต่ <code>append</code> slice จนเกิน cap แล้วผู้เรียกจะมองไม่เห็นผล)</li><li>runtime สร้าง stack frame ให้ทุกการเรียก ฟังก์ชันคืนค่าได้หลายค่า และใช้เป็น first-class value หรือ closure ได้</li></ul>
+</details>
+<h3 id="theory-11-value-type-กับ-reference-type-ต่างกันอย่างไร">11. Value type กับ Reference type ต่างกันอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="table-wrap"><table><thead><tr><th>Value type</th><th>"Reference-like" type</th></tr></thead><tbody><tr><td><code>int</code>, <code>float</code>, <code>bool</code>, <code>string</code>, array, struct</td><td>slice, map, channel, pointer, func, interface</td></tr><tr><td>ส่งต่อแล้วได้<strong>สำเนาอิสระ</strong></td><td>ส่งต่อแล้ว<strong>ยังชี้ข้อมูลชุดเดิม</strong></td></tr></tbody></table></div>
+<p>ทางเทคนิค Go ไม่มี "reference" แบบ C++ ทุกอย่างคือ copy แต่บาง type ข้างในมี pointer อยู่ การ copy จึงยังแชร์ข้อมูล</p>
+</details>
+<h3 id="theory-12-แปลง-type-ทำอย่างไร">12. แปลง type ทำอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ต้องแปลง <strong>explicit</strong> เสมอ</p>
+<div class="code"><span class="code-lang">go</span><pre><code>f := <span class="t-bi">float64</span>(<span class="t-number">10</span>)                <span class="t-comment">// ตัวเลข → ตัวเลข</span>
+s := strconv.<span class="t-fn">Itoa</span>(<span class="t-number">42</span>)           <span class="t-comment">// int → string &quot;42&quot;</span>
+n, err := strconv.<span class="t-fn">Atoi</span>(<span class="t-string">&quot;42&quot;</span>)    <span class="t-comment">// string → int (อาจ error)</span>
+b := []<span class="t-bi">byte</span>(<span class="t-string">&quot;hi&quot;</span>)               <span class="t-comment">// string ↔ []byte</span>
+r := []<span class="t-bi">rune</span>(<span class="t-string">&quot;สวัสดี&quot;</span>)            <span class="t-comment">// string → []rune</span></code></pre></div>
+<p>⚠️ <code>string(65)</code> ได้ <code>&quot;A&quot;</code> ไม่ใช่ <code>&quot;65&quot;</code> (<code>go vet</code> เตือน) ถ้าต้องการตัวเลขเป็นข้อความต้องใช้ <code>strconv</code></p>
+<p>ส่วน <strong>type assertion</strong> <code>v, ok := x.(string)</code> ใช้กับ interface ไม่ใช่การแปลง type</p>
+</details>
+<h3 id="theory-13-map-คืออะไร-ใช้ทำอะไร">13. Map คืออะไร ใช้ทำอะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>hash table ที่เก็บคู่ key/value ค้นหา เพิ่ม และลบได้เฉลี่ย O(1)</p>
+<div class="code"><span class="code-lang">go</span><pre><code>m := <span class="t-bi">make</span>(<span class="t-kw">map</span>[<span class="t-bi">string</span>]<span class="t-bi">int</span>)
+m[<span class="t-string">&quot;go&quot;</span>]++
+v, ok := m[<span class="t-string">&quot;rust&quot;</span>]   <span class="t-comment">// comma-ok: ok=false ถ้าไม่มี key</span>
+<span class="t-bi">delete</span>(m, <span class="t-string">&quot;go&quot;</span>)</code></pre></div>
+<p>ใช้ทำ cache, config, นับความถี่, set (<code>map[T]struct{}</code>) และ index ข้อมูล</p>
+<p>ข้อควรรู้: ลำดับการวนลูปสุ่ม, <strong>ไม่ thread-safe</strong>, เขียนลง nil map จะ panic และ key ต้องเป็น type ที่ <code>comparable</code></p>
+</details>
+<h3 id="theory-14-raw-string-literal-คืออะไร">14. Raw string literal คืออะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>string ที่ครอบด้วย backtick <code>`</code> ข้างในไม่ตีความ escape sequence (<code>\n</code> เป็นตัวอักษร 2 ตัว) และขึ้นบรรทัดใหม่ได้</p>
+<div class="code"><span class="code-lang">go</span><pre><code>re := <span class="t-string">`^\d{3}-\d{4}$`</span>          <span class="t-comment">// regex ไม่ต้อง escape \ ซ้ำ</span>
+js := <span class="t-string">`{&quot;name&quot;: &quot;Tah&quot;}`</span>        <span class="t-comment">// JSON ไม่ต้อง escape &quot;</span></code></pre></div>
+<p>เหมาะกับ regex, JSON, SQL, template และ path ของ Windows ดูตัวอย่างใน test ของข้อ 06</p>
+</details>
+<h3 id="theory-15-automatic-memory-management-ช่วยป้องกัน-memory-leak-อย่างไร">15. Automatic memory management ช่วยป้องกัน memory leak อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>GC คืน memory ของ object ที่<strong>ไม่มีใครอ้างถึงแล้ว</strong>ให้อัตโนมัติ จึงไม่มีปัญหาลืม <code>free</code> หรือ double free แบบ C</p>
+<p>แต่ <strong>ยังเกิด leak ได้</strong> ถ้ายังมีการอ้างถึงอยู่ เช่น</p>
+<ul><li>goroutine ที่บล็อกค้าง (ข้อ 09, 10)</li><li>map หรือ cache ที่โตไม่หยุด</li><li>sub-slice ที่ถือ array ใหญ่ไว้ (ข้อ 13)</li><li><code>time.Ticker</code> ที่ไม่ได้ <code>Stop()</code> (ก่อน Go 1.23)</li><li>global variable ที่สะสมข้อมูลเรื่อย ๆ</li></ul>
+</details>
+<h3 id="theory-16-memory-allocation-ใน-go-ทำงานอย่างไร">16. Memory allocation ใน Go ทำงานอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>Stack:</strong> ตัวแปรที่ใช้แค่ในฟังก์ชัน จองและคืนเร็วมาก ไม่ต้องใช้ GC</li><li><strong>Heap:</strong> ตัวแปรที่ "escape" ออกนอกฟังก์ชัน เช่น return pointer, เก็บใน interface หรือ closure, หรือใหญ่เกินกว่าจะวางบน stack</li></ul>
+<p>compiler ตัดสินเองด้วย <strong>escape analysis</strong> ตรวจดูได้ด้วย</p>
+<div class="code"><span class="code-lang">bash</span><pre><code>go build -gcflags=-m ./...
+<span class="t-comment"># ./x.go:10:9: &amp;User{...} escapes to heap</span></code></pre></div>
+<p><code>new(T)</code> และ <code>make(...)</code> ไม่ได้บังคับว่าต้องอยู่บน heap เสมอ</p>
+</details>
+<h3 id="theory-17-struct-คืออะไร-และเข้าถึง-field-อย่างไร">17. Struct คืออะไร และเข้าถึง field อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> Point <span class="t-kw">struct</span> {
+    X, Y <span class="t-bi">int</span>
+}
+p := Point{X: <span class="t-number">1</span>, Y: <span class="t-number">2</span>}
+p.X = <span class="t-number">10</span>
+pp := &amp;p
+pp.Y = <span class="t-number">20</span>   <span class="t-comment">// Go dereference ให้อัตโนมัติ ไม่ต้องเขียน (*pp).Y</span></code></pre></div>
+<ul><li>field ที่ขึ้นต้นด้วยตัวพิมพ์ใหญ่จะ export ออกนอก package</li><li><strong>Embedding</strong> (<code>type Admin struct { User }</code>) ใช้ทำ composition แทน inheritance</li><li>struct เทียบกันด้วย <code>==</code> ได้ถ้าทุก field comparable</li></ul>
+</details>
+<h3 id="theory-18-global-variable-คืออะไร">18. Global variable คืออะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ตัวแปรที่ประกาศนอกฟังก์ชัน (package-level) ใช้ได้ทั้ง package และจาก package อื่นถ้า export</p>
+<p><strong>ควรหลีกเลี่ยง</strong> เพราะ</p>
+<ul><li>test ยาก เพราะ state ข้าม test กัน</li><li>เสี่ยง data race เมื่อหลาย goroutine ใช้พร้อมกัน</li><li>เกิด hidden dependency</li><li>อยู่ใน memory ตลอดอายุโปรแกรม</li></ul>
+<p>ทางเลือกคือส่ง dependency ผ่าน struct หรือ parameter (dependency injection) ส่วนที่ยอมรับได้คือค่าคงที่ sentinel error และ regex ที่ compile ครั้งเดียว</p>
+</details>
+<h3 id="theory-19-ทำงานกับ-json-อย่างไร">19. ทำงานกับ JSON อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ใช้ package <code>encoding/json</code></p>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> User <span class="t-kw">struct</span> {
+    Name  <span class="t-bi">string</span> <span class="t-string">`json:&quot;name&quot;`</span>
+    Email <span class="t-bi">string</span> <span class="t-string">`json:&quot;email,omitempty&quot;`</span>
+    Pass  <span class="t-bi">string</span> <span class="t-string">`json:&quot;-&quot;`</span>            <span class="t-comment">// ไม่ออกใน JSON</span>
+}
+<span class="t-kw">var</span> u User
+err := json.<span class="t-fn">Unmarshal</span>(data, &amp;u)        <span class="t-comment">// JSON → struct</span>
+out, err := json.<span class="t-fn">Marshal</span>(u)            <span class="t-comment">// struct → JSON</span>
+json.<span class="t-fn">NewDecoder</span>(r.Body).<span class="t-fn">Decode</span>(&amp;u)     <span class="t-comment">// แบบ stream</span></code></pre></div>
+<p>มองเห็นเฉพาะ exported field ดูฝึกได้ในข้อ 06</p>
+</details>
+<h3 id="theory-20-reserved-keyword-คืออะไร">20. Reserved keyword คืออะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>คำที่ภาษาจองไว้ ใช้เป็นชื่อตัวแปรไม่ได้ Go มี 25 คำ</p>
+<p><code>break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var</code></p>
+<p>ส่วน <code>int</code>, <code>string</code>, <code>true</code>, <code>nil</code>, <code>len</code>, <code>append</code> เป็น <strong>predeclared identifier</strong> ไม่ใช่ keyword จึงตั้งชื่อทับได้ แต่ไม่ควรทำ</p>
+</details>
+<h3 id="theory-21-go-รองรับ-method-overloading-ไหม">21. Go รองรับ method overloading ไหม?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p><strong>ไม่รองรับ</strong> ในหนึ่ง scope ชื่อฟังก์ชันซ้ำกันไม่ได้ (ตั้งใจให้เรียบง่าย) ใช้แทนได้ด้วย</p>
+<ul><li>ตั้งชื่อต่างกัน: <code>strconv.ParseInt</code>, <code>strconv.ParseFloat</code></li><li>Variadic: <code>func Sum(nums ...int)</code></li><li>Interface: รับ <code>Shape</code> แล้วส่งอะไรก็ได้ที่ implement</li><li>Generics: <code>func Max[T cmp.Ordered](a, b T) T</code></li><li>Functional options: <code>NewServer(WithPort(8080), WithTLS())</code></li></ul>
+</details>
+<hr>
+<h2 id="theory-ระดับกลาง-intermediate">ระดับกลาง (Intermediate)</h2>
+<h3 id="theory-22-implement-error-handling-อย่างไร">22. Implement error handling อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>error คือ interface <code>type error interface { Error() string }</code> คืนเป็นค่าสุดท้ายของฟังก์ชัน แล้วตรวจทันที</p>
+<div class="code"><span class="code-lang">go</span><pre><code>f, err := os.<span class="t-fn">Open</span>(path)
+<span class="t-kw">if</span> err != <span class="t-bi">nil</span> {
+    <span class="t-kw">return</span> fmt.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;open config %s: %w&quot;</span>, path, err) <span class="t-comment">// wrap + เพิ่ม context</span>
+}
+<span class="t-kw">defer</span> f.<span class="t-fn">Close</span>()</code></pre></div>
+<p>แนวทางที่ดี:</p>
+<ul><li>จัดการ error <strong>ครั้งเดียว</strong> เลือกว่าจะ log หรือจะ return อย่าทำทั้งสองอย่าง</li><li>ใช้ <code>errors.Is</code> และ <code>errors.As</code> แทน <code>==</code></li><li>สร้าง custom error type เมื่อต้องการส่งข้อมูลเพิ่ม</li></ul>
+<p>ดูฝึกได้ในข้อ 05</p>
+</details>
+<h3 id="theory-23-method-signature-คืออะไร">23. Method signature คืออะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>"หน้าตา" ของ method ประกอบด้วย receiver, ชื่อ, parameter และ return type</p>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> (a *Account) <span class="t-fn">Withdraw</span>(amount <span class="t-bi">int</span>) <span class="t-bi">error</span>
+<span class="t-comment">//    ^receiver   ^ชื่อ     ^params      ^return</span></code></pre></div>
+<p>signature กำหนดว่า type นั้น implement interface ไหนได้ ต้องตรงกันทุกส่วน รวมถึงชนิดของ receiver ด้วย: method ที่มี pointer receiver จะนับอยู่ใน method set ของ <code>*T</code> เท่านั้น ไม่นับใน <code>T</code></p>
+</details>
+<h3 id="theory-24-อธิบาย-pointer-แบบละเอียด">24. อธิบาย pointer แบบละเอียด</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><code>&amp;x</code> คือ address ของ x และ <code>*p</code> คือค่าที่ p ชี้อยู่ (dereference)</li><li>zero value ของ pointer คือ <code>nil</code> การ dereference nil จะ <strong>panic</strong></li><li><code>new(T)</code> คืน <code>*T</code> ที่ชี้ไปยัง zero value</li><li>ใช้ pointer receiver เมื่อต้องแก้ค่า struct ใหญ่ หรือมี Mutex</li><li><strong>ข้อควรระวัง:</strong> pointer ที่ชี้เข้าไปใน slice อาจกลายเป็นของเก่าหลัง <code>append</code> สร้าง array ใหม่</li><li>ก่อน Go 1.22 ตัวแปรใน loop ถูกใช้ร่วมกันทุกรอบ (<code>&amp;v</code> ใน range ได้ address เดิม) ตั้งแต่ 1.22 ได้ตัวแปรใหม่ทุกรอบ</li></ul>
+</details>
+<h3 id="theory-25-concurrency-model-ของ-go-ทำงานอย่างไร">25. Concurrency model ของ Go ทำงานอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>อิงแนวคิด <strong>CSP (Communicating Sequential Processes)</strong></p>
+<ul><li><strong>Goroutine:</strong> <code>go f()</code> เป็น "thread" เบา ๆ เริ่มที่ stack ~2KB สร้างได้หลักแสนตัว</li><li><strong>Channel:</strong> ท่อส่งข้อมูลระหว่าง goroutine แบบ type-safe และ synchronize ให้ในตัว</li><li><strong><code>select</code>:</strong> รอหลาย channel พร้อมกัน</li><li><strong><code>sync</code>:</strong> <code>Mutex</code>, <code>WaitGroup</code>, <code>Once</code> และ <code>sync/atomic</code> สำหรับกรณีที่ต้องแชร์ memory</li><li><strong><code>context</code>:</strong> ใช้ส่งสัญญาณ cancel และ deadline</li></ul>
+<p>คติ: *"Don't communicate by sharing memory; share memory by communicating."*</p>
+<p>ดูฝึกได้ในข้อ 07 ถึง 10</p>
+</details>
+<h3 id="theory-26-จัดการ-dependency-ในโปรเจกต์อย่างไร">26. จัดการ dependency ในโปรเจกต์อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>(ต่อจากข้อ 7)</p>
+<ul><li><code>go get pkg@version</code> เลือกเวอร์ชัน, <code>go get -u ./...</code> อัปเดตทั้งหมด</li><li><code>go list -m all</code> ดู dependency ทั้งหมด (รวมตัวที่มาทางอ้อม)</li><li><code>go mod why pkg</code> ดูว่าทำไมต้องมี package นี้</li><li><code>replace</code> ใน go.mod ชี้ไปยังโค้ด local หรือ fork</li><li><code>go mod vendor</code> copy dependency มาไว้ใน repo (ใช้ build แบบ offline)</li><li><code>GOPRIVATE</code> ใช้กับ repo ภายในองค์กร</li><li><code>govulncheck ./...</code> ตรวจช่องโหว่</li></ul>
+</details>
+<h3 id="theory-27-go-runtime-ทำหน้าที่อะไร">27. Go runtime ทำหน้าที่อะไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ชั้นซอฟต์แวร์ที่ compile ติดไปใน binary ทุกตัว มีหน้าที่</p>
+<ul><li><strong>Scheduler:</strong> จัดตาราง goroutine ลงบน OS thread (M:N) ดูข้อ 45</li><li><strong>Memory allocator + GC</strong></li><li><strong>จัดการ stack ของ goroutine:</strong> ขยายและหดได้</li><li><strong>Channel, select, timer, network poller:</strong> ใช้ epoll หรือ kqueue ทำให้ I/O ดูเหมือน blocking แต่ไม่บล็อก thread</li><li>ตรวจ panic, map race และ deadlock (<code>all goroutines are asleep</code>)</li></ul>
+<p>ปรับได้ผ่าน package <code>runtime</code> และ env เช่น <code>GOMAXPROCS</code>, <code>GOGC</code>, <code>GODEBUG</code></p>
+</details>
+<h3 id="theory-28-go-เรียกฟังก์ชันอย่างไร-ระดับล่าง">28. Go เรียกฟังก์ชันอย่างไร (ระดับล่าง)?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li>ตั้งแต่ Go 1.17 ใช้ <strong>register-based calling convention</strong> (ABIInternal) ส่ง argument และผลลัพธ์ผ่าน register ก่อน ถ้าไม่พอจึงใช้ stack</li><li>ทุก call จะมี stack frame</li><li>ส่วนต้นของฟังก์ชันมี <strong>stack check</strong> ถ้า stack ไม่พอ runtime จะขยาย stack โดย copy ไปยังพื้นที่ที่ใหญ่ขึ้น</li><li>ฟังก์ชันเล็ก ๆ มักถูก <strong>inline</strong> ทำให้ไม่มี overhead ของการเรียก</li><li><code>defer</code> ในปัจจุบันเกือบไม่มี overhead (open-coded defer)</li></ul>
+</details>
+<h3 id="theory-29-error-handling-ของ-go-ต่างจาก-exception-อย่างไร">29. Error handling ของ Go ต่างจาก exception อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="table-wrap"><table><thead><tr><th>Go (error value)</th><th>Exception (Java/Python)</th></tr></thead><tbody><tr><td>error เป็นค่าธรรมดา คืนจากฟังก์ชัน</td><td>throw แล้วกระโดดข้าม stack</td></tr><tr><td>เห็นทุกจุดที่ fail ได้ใน signature</td><td>ไม่รู้ว่าฟังก์ชันไหน throw บ้าง</td></tr><tr><td>บังคับให้คิดทุกจุด (verbose)</td><td>โค้ดสั้นกว่า แต่มี control flow ซ่อนอยู่</td></tr><tr><td>ไม่มีต้นทุนแฝง</td><td>ต้นทุนเกิดตอน unwind stack</td></tr></tbody></table></div>
+<p>Go ยังมี <code>panic</code>/<code>recover</code> แต่ใช้กับ <strong>กรณีร้ายแรงที่ไม่คาดคิด</strong> เท่านั้น ไม่ใช่ flow ปกติ</p>
+</details>
+<h3 id="theory-30-channel-ช่วยให้-goroutine-สื่อสารกันอย่างไร">30. Channel ช่วยให้ goroutine สื่อสารกันอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code>ch := <span class="t-bi">make</span>(<span class="t-kw">chan</span> <span class="t-bi">int</span>)      <span class="t-comment">// unbuffered: ผู้ส่งกับผู้รับต้องมาเจอกัน</span>
+bch := <span class="t-bi">make</span>(<span class="t-kw">chan</span> <span class="t-bi">int</span>, <span class="t-number">10</span>) <span class="t-comment">// buffered: ส่งได้จนกว่า buffer จะเต็ม</span>
+ch &lt;- <span class="t-number">1</span>                   <span class="t-comment">// ส่ง</span>
+v, ok := &lt;-ch             <span class="t-comment">// รับ (ok=false ถ้า channel ถูก close และหมดข้อมูลแล้ว)</span>
+<span class="t-bi">close</span>(ch)                 <span class="t-comment">// ผู้ส่งเป็นคน close</span>
+<span class="t-kw">for</span> v := <span class="t-kw">range</span> ch {}      <span class="t-comment">// วนจนกว่าจะถูก close</span>
+
+<span class="t-kw">select</span> {
+<span class="t-kw">case</span> v := &lt;-a:
+<span class="t-kw">case</span> b &lt;- x:
+<span class="t-kw">case</span> &lt;-time.<span class="t-fn">After</span>(time.Second):   <span class="t-comment">// timeout</span>
+<span class="t-kw">default</span>:                          <span class="t-comment">// non-blocking</span>
+}</code></pre></div>
+<p><strong>กฎที่ต้องจำ:</strong></p>
+<ul><li>ส่งลง channel ที่ close แล้ว → panic</li><li>close ซ้ำ → panic</li><li>ส่งหรือรับจาก nil channel → บล็อกตลอดไป</li><li>ใช้ <code>chan&lt;- T</code> และ <code>&lt;-chan T</code> จำกัดทิศทางใน signature</li></ul>
+</details>
+<h3 id="theory-31-method-signature-กับ-polymorphism">31. Method signature กับ polymorphism</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>Polymorphism ใน Go ทำผ่าน <strong>interface</strong>: ฟังก์ชันรับ interface แล้วส่ง type ใดก็ได้ที่มี method signature ตรง</p>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> Notifier <span class="t-kw">interface</span> { <span class="t-fn">Notify</span>(msg <span class="t-bi">string</span>) <span class="t-bi">error</span> }
+<span class="t-kw">func</span> <span class="t-fn">Alert</span>(n Notifier) { n.<span class="t-fn">Notify</span>(<span class="t-string">&quot;server down&quot;</span>) }  <span class="t-comment">// Email, Slack, SMS ใช้ได้หมด</span></code></pre></div>
+<p>หลักที่นิยม: <strong>"Accept interfaces, return structs"</strong> และทำ interface ให้เล็ก (1 ถึง 3 method) เช่น <code>io.Reader</code> ดูฝึกได้ในข้อ 04</p>
+</details>
+<h3 id="theory-32-ขั้นตอนของ-memory-allocation-และ-garbage-collection">32. ขั้นตอนของ memory allocation และ garbage collection</h3>
+<details><summary>ดูคำตอบ</summary>
+<ol><li><strong>Compile time:</strong> escape analysis ตัดสินว่าจะวางบน stack หรือ heap</li><li><strong>Allocate บน heap:</strong> runtime มีแคชต่อ P (<code>mcache</code>) แบ่งตาม size class จึงจองเร็วโดยไม่ต้อง lock</li><li><strong>GC เริ่ม</strong> เมื่อ heap โตถึงเป้า (ค่า default คือโต 100% จาก live heap ครั้งก่อน ตาม <code>GOGC=100</code>) หรือเมื่อใกล้ <code>GOMEMLIMIT</code></li><li><strong>Mark (concurrent):</strong> ไล่จาก root (global, stack) แล้วระบาย object เป็นขาว เทา ดำ (tri-color) พร้อมเปิด write barrier เพื่อให้โปรแกรมทำงานต่อได้ระหว่าง mark</li><li><strong>Sweep:</strong> object ที่ยังเป็นสีขาวคือไม่มีใครใช้แล้ว จึงคืนพื้นที่ไปใช้ใหม่</li></ol>
+<p>มีช่วง stop-the-world สั้น ๆ เพียงเล็กน้อยตอนเริ่มและจบ mark</p>
+</details>
+<h3 id="theory-33-ฟังก์ชันที่คืนหลายค่า">33. ฟังก์ชันที่คืนหลายค่า</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> <span class="t-fn">divmod</span>(a, b <span class="t-bi">int</span>) (q, r <span class="t-bi">int</span>) {  <span class="t-comment">// named result</span>
+    q, r = a/b, a%b
+    <span class="t-kw">return</span>
+}
+q, r := <span class="t-fn">divmod</span>(<span class="t-number">7</span>, <span class="t-number">2</span>)
+_, r = <span class="t-fn">divmod</span>(<span class="t-number">7</span>, <span class="t-number">2</span>)                  <span class="t-comment">// ใช้ _ ทิ้งค่าที่ไม่ต้องการ</span>
+v, err := strconv.<span class="t-fn">Atoi</span>(<span class="t-string">&quot;x&quot;</span>)         <span class="t-comment">// รูปแบบ (result, error)</span>
+v, ok := m[<span class="t-string">&quot;k&quot;</span>]                     <span class="t-comment">// comma-ok idiom</span></code></pre></div>
+<p>ใช้แทน tuple และ exception ได้อย่างเรียบง่าย ส่วน named result มีประโยชน์กับ <code>defer</code> ที่ต้องแก้ค่า error ก่อนคืน</p>
+</details>
+<h3 id="theory-34-ทำไม-type-conversion-ถึงสำคัญใน-go">34. ทำไม type conversion ถึงสำคัญใน Go?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>เพราะ Go <strong>ไม่แปลงให้อัตโนมัติ</strong> แม้ <code>int</code> กับ <code>int32</code> ก็ถือเป็นคนละ type</p>
+<ul><li>ป้องกันบั๊กเงียบ เช่น ข้อมูลหายตอนแปลงโดยไม่รู้ตัว</li><li>ทำให้เห็นชัดว่าจุดไหนเสี่ยง overflow หรือเสียความแม่นยำ</li><li>แม้แต่ <code>type Celsius float64</code> ก็ใช้แทน <code>float64</code> ตรง ๆ ไม่ได้ ช่วยป้องกันการใช้หน่วยผิด</li></ul>
+</details>
+<h3 id="theory-35-เขียน-unit-test-ด้วย-package-testing">35. เขียน unit test ด้วย package testing</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> <span class="t-fn">TestAdd</span>(t *testing.T) {
+    tests := []<span class="t-kw">struct</span> {
+        name       <span class="t-bi">string</span>
+        a, b, want <span class="t-bi">int</span>
+    }{
+        {<span class="t-string">&quot;positive&quot;</span>, <span class="t-number">1</span>, <span class="t-number">2</span>, <span class="t-number">3</span>},
+        {<span class="t-string">&quot;negative&quot;</span>, -<span class="t-number">1</span>, -<span class="t-number">2</span>, -<span class="t-number">3</span>},
+    }
+    <span class="t-kw">for</span> _, tt := <span class="t-kw">range</span> tests {
+        t.<span class="t-fn">Run</span>(tt.name, <span class="t-kw">func</span>(t *testing.T) {
+            <span class="t-kw">if</span> got := <span class="t-fn">Add</span>(tt.a, tt.b); got != tt.want {
+                t.<span class="t-fn">Errorf</span>(<span class="t-string">&quot;Add(%d,%d) = %d; want %d&quot;</span>, tt.a, tt.b, got, tt.want)
+            }
+        })
+    }
+}</code></pre></div>
+<ul><li><code>t.Errorf</code> รายงานแล้วรันต่อ ส่วน <code>t.Fatalf</code> หยุด test นั้นทันที</li><li>คำสั่งที่ใช้บ่อย: <code>go test -v -run TestAdd -race -cover ./...</code></li></ul>
+<p>ดูฝึกได้ในข้อ 12</p>
+</details>
+<h3 id="theory-36-gc-ส่งผลต่อ-memory-อย่างไร">36. GC ส่งผลต่อ memory อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>ข้อดี:</strong> memory usage คงที่ ไม่ต้อง free เอง และไม่มี dangling pointer</li><li><strong>ต้นทุน:</strong> ใช้ CPU (มักอยู่ราว 25% ช่วงที่ GC ทำงาน) มี pause สั้น ๆ และต้องใช้ memory เผื่อ (heap ใหญ่กว่า live data ประมาณ 2 เท่าที่ <code>GOGC=100</code>)</li><li><strong>ลดภาระ GC</strong> ได้ด้วยการลดจำนวน allocation เช่น preallocate, <code>sync.Pool</code>, ใช้ value แทน pointer และหลีกเลี่ยง <code>[]*T</code> ขนาดใหญ่</li><li>ดูสถิติได้ด้วย <code>GODEBUG=gctrace=1</code> หรือ <code>runtime.ReadMemStats</code></li></ul>
+</details>
+<hr>
+<h2 id="theory-ระดับสูง-advanced">ระดับสูง (Advanced)</h2>
+<h3 id="theory-37-go-จัดการ-memory-leak-และหาคอขวดอย่างไร">37. Go จัดการ memory leak และหาคอขวดอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p><strong>เครื่องมือ</strong></p>
+<ul><li><code>import _ &quot;net/http/pprof&quot;</code> แล้วดู <code>/debug/pprof/heap</code>, <code>/goroutine</code>, <code>/profile</code> (CPU), <code>/block</code>, <code>/mutex</code></li><li><code>go tool pprof -http=:8080 heap.out</code> ดู flame graph</li><li><code>go test -bench . -benchmem -memprofile mem.out -cpuprofile cpu.out</code></li><li><code>go tool trace</code> ดู timeline ของ goroutine และ GC</li><li>metric: <code>runtime.NumGoroutine()</code>, heap in-use</li></ul>
+<p><strong>สาเหตุ leak ที่พบบ่อย:</strong> goroutine ค้าง, ไม่ <code>Close()</code> body ของ HTTP response, ไม่ <code>Stop()</code> ticker (ก่อน Go 1.23), cache ไม่มีขอบเขต และ sub-slice ถือ array ใหญ่</p>
+<p><strong>วิธีดู:</strong> เทียบ heap profile 2 ช่วงเวลา (<code>-base</code>) ว่าอะไรโตขึ้น</p>
+</details>
+<h3 id="theory-38-dependency-management-ของ-go-เทียบกับภาษาอื่น">38. Dependency management ของ Go เทียบกับภาษาอื่น</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>go.mod อ่านง่าย</strong> เทียบกับ <code>pom.xml</code> (Maven) หรือ <code>package.json</code> + lock file (npm)</li><li><strong>Minimal Version Selection (MVS):</strong> Go เลือก "เวอร์ชันต่ำสุดที่ตรงทุกเงื่อนไข" ผลลัพธ์จึง deterministic โดยไม่ต้องมี lock file แยก ต่างจาก npm ที่เลือกเวอร์ชันล่าสุดใน range</li><li><strong>Import path คือ URL ของ repo</strong> ไม่ต้องมี central registry (แต่มี proxy.golang.org และ checksum DB คอยช่วย)</li><li><strong>Semantic import versioning:</strong> v2 ขึ้นไปต้องใส่ <code>/v2</code> ใน import path จึงใช้ v1 กับ v2 พร้อมกันได้</li><li>ไม่มี <code>node_modules</code> ซ้อนกันหลายชั้น</li></ul>
+</details>
+<h3 id="theory-39-ฟังก์ชันโต้ตอบกับฟังก์ชันรอบข้างอย่างไร">39. ฟังก์ชันโต้ตอบกับฟังก์ชันรอบข้างอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>Stack frame:</strong> ผู้เรียกเตรียม argument แล้ว call ผู้ถูกเรียกมี frame ของตัวเอง เมื่อ return จะคืนค่าให้ผู้เรียก</li><li><strong>Closure:</strong> ฟังก์ชันภายในจับตัวแปรภายนอกแบบ <strong>by reference</strong> (ตัวแปรนั้นจะ escape ไป heap)</li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">func</span> <span class="t-fn">counter</span>() <span class="t-kw">func</span>() <span class="t-bi">int</span> {
+    n := <span class="t-number">0</span>
+    <span class="t-kw">return</span> <span class="t-kw">func</span>() <span class="t-bi">int</span> { n++; <span class="t-kw">return</span> n }
+}</code></pre></div>
+<ul><li><strong><code>defer</code></strong> ทำงานแบบ LIFO ตอนฟังก์ชันจบ (แม้จะ panic) โดยประเมินค่า argument ตั้งแต่บรรทัดที่เขียน <code>defer</code></li><li><strong>panic</strong> จะ unwind stack ไปทีละ frame และรัน defer ของแต่ละ frame จนกว่าจะเจอ <code>recover</code></li></ul>
+</details>
+<h3 id="theory-40-จัดการ-concurrency-ให้ใช้-memory-อย่างมีประสิทธิภาพ">40. จัดการ concurrency ให้ใช้ memory อย่างมีประสิทธิภาพ</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li>goroutine ถูกก็จริง แต่<strong>ไม่ฟรี</strong> ถ้าสร้าง 1 ล้านตัว จะใช้ stack อย่างน้อย ~2GB ควร<strong>จำกัดจำนวน</strong>ด้วย worker pool (ข้อ 07), semaphore (<code>chan struct{}</code> แบบ buffered) หรือ <code>errgroup.SetLimit</code></li><li>ทุก goroutine ต้อง<strong>มีทางจบ</strong> โดยส่ง context เข้าไป (ข้อ 09, 10)</li><li>ตั้งขนาด buffer ของ channel ให้เหมาะสม ไม่ใหญ่เกินจำเป็น</li><li>ใช้ <code>sync.Pool</code> reuse buffer ลด allocation</li><li>ลด lock contention ด้วยการแบ่ง shard หรือใช้ atomic</li></ul>
+</details>
+<h3 id="theory-41-การแปลงระหว่าง-data-type-ต่าง-ๆ">41. การแปลงระหว่าง data type ต่าง ๆ</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">var</span> big <span class="t-bi">int64</span> = <span class="t-number">300</span>
+small := <span class="t-bi">int8</span>(big)        <span class="t-comment">// 44 — overflow แบบเงียบ ๆ ไม่มี error!</span>
+f := <span class="t-number">3.99</span>
+i := <span class="t-bi">int</span>(f)               <span class="t-comment">// 3 — ตัดทศนิยมทิ้ง ไม่ปัด</span>
+n := -<span class="t-number">1</span>
+u := <span class="t-bi">uint</span>(n)              <span class="t-comment">// 18446744073709551615 — wrap รอบ</span></code></pre></div>
+<ul><li>ถ้าต้องการความปลอดภัย ให้ตรวจช่วงก่อนแปลง หรือใช้ <code>strconv.ParseInt(s, 10, 8)</code> ที่คืน error เมื่อเกินช่วง</li><li><code>string</code> ↔ <code>[]byte</code> จะ copy ข้อมูล (compiler ปรับให้ไม่ copy ได้ในบางกรณี)</li><li>interface → type ใช้ <strong>type assertion</strong> <code>v, ok := x.(T)</code> (ถ้าไม่ใช้ <code>ok</code> แล้ว type ไม่ตรงจะ panic)</li></ul>
+</details>
+<h3 id="theory-42-method-signature-กับการเขียนโค้ดที่-reuse-ได้">42. Method signature กับการเขียนโค้ดที่ reuse ได้</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>signature ที่ดีคือ <strong>สัญญา</strong> ที่ชัดเจน</p>
+<ul><li>รับ <strong>interface เล็ก ๆ</strong> เช่น <code>io.Reader</code> ทำให้ฟังก์ชันใช้ได้กับไฟล์, network, buffer หรือ gzip</li><li>รับ <code>context.Context</code> เป็นตัวแรก และคืน <code>error</code> เป็นตัวสุดท้าย</li><li>หลีกเลี่ยง parameter แบบ <code>bool</code> หลายตัว ใช้ struct ของ option หรือ functional options แทน</li><li>Generics ช่วย reuse algorithm ข้าม type ได้ เช่น <code>slices.Contains</code>, <code>maps.Keys</code></li></ul>
+</details>
+<h3 id="theory-43-pointer-และ-memory-ในระดับล่าง">43. Pointer และ memory ในระดับล่าง</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li>pointer ใน Go เป็น address ขนาด 8 byte (บน 64-bit) ที่ <strong>GC ติดตามได้</strong> runtime จึงย้าย stack ได้อย่างปลอดภัยเพราะรู้ว่า pointer ตัวไหนชี้เข้าไปใน stack</li><li>ไม่มี pointer arithmetic (ยกเว้น <code>unsafe.Pointer</code> + <code>unsafe.Add</code> ซึ่งเสี่ยง)</li><li><strong>Struct layout และ alignment:</strong> เรียง field จากใหญ่ไปเล็กช่วยลด padding</li></ul>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> Bad  <span class="t-kw">struct</span> { a <span class="t-bi">bool</span>; b <span class="t-bi">int64</span>; c <span class="t-bi">bool</span> }  <span class="t-comment">// 24 byte</span>
+<span class="t-kw">type</span> Good <span class="t-kw">struct</span> { b <span class="t-bi">int64</span>; a, c <span class="t-bi">bool</span> }       <span class="t-comment">// 16 byte</span></code></pre></div>
+<ul><li>ใช้ pointer มากเกินไป เช่น <code>[]*T</code> จะเพิ่มงานของ GC และทำให้ cache locality แย่กว่า <code>[]T</code></li></ul>
+</details>
+<h3 id="theory-44-ออกแบบ-custom-error-type">44. ออกแบบ custom error type</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code><span class="t-kw">type</span> HTTPError <span class="t-kw">struct</span> {
+    Code <span class="t-bi">int</span>
+    Err  <span class="t-bi">error</span>
+}
+<span class="t-kw">func</span> (e *HTTPError) <span class="t-fn">Error</span>() <span class="t-bi">string</span> { <span class="t-kw">return</span> fmt.<span class="t-fn">Sprintf</span>(<span class="t-string">&quot;http %d: %v&quot;</span>, e.Code, e.Err) }
+<span class="t-kw">func</span> (e *HTTPError) <span class="t-fn">Unwrap</span>() <span class="t-bi">error</span> { <span class="t-kw">return</span> e.Err }   <span class="t-comment">// ให้ errors.Is/As มองทะลุเข้าไปได้</span>
+
+<span class="t-kw">var</span> he *HTTPError
+<span class="t-kw">if</span> errors.<span class="t-fn">As</span>(err, &amp;he) &amp;&amp; he.Code == <span class="t-number">404</span> { ... }</code></pre></div>
+<ul><li>เพิ่ม <code>Unwrap()</code> เพื่อรองรับ error chain</li><li>method <code>Is(target error) bool</code> ใช้กำหนดการเทียบเองได้</li><li>ระวัง <strong>typed nil</strong>: ห้าม return <code>(*HTTPError)(nil)</code> เป็น <code>error</code></li></ul>
+<p>ดูฝึกได้ในข้อ 05</p>
+</details>
+<h3 id="theory-45-go-runtime-จัดตาราง-goroutine-อย่างไร">45. Go runtime จัดตาราง goroutine อย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<p>ใช้โมเดล <strong>G-M-P</strong> (M:N scheduling)</p>
+<ul><li><strong>G</strong> = goroutine</li><li><strong>M</strong> = OS thread (machine)</li><li><strong>P</strong> = processor เชิงตรรกะ มีจำนวนเท่ากับ <code>GOMAXPROCS</code> (ค่า default คือจำนวน CPU) แต่ละ P มี <strong>local run queue</strong> ของตัวเอง</li></ul>
+<p>การทำงาน:</p>
+<ol><li>M ต้องถือ P จึงจะรัน G ได้ โดยหยิบ G จาก local queue ของ P ก่อน</li><li>ถ้า queue ว่าง จะ <strong>work stealing</strong> ขโมย G ครึ่งหนึ่งจาก P อื่น หรือหยิบจาก global queue</li><li>ถ้า G ทำ syscall ที่บล็อก M จะปล่อย P ให้ M ตัวอื่นรัน G ต่อได้ ส่วน network I/O ใช้ netpoller ทำให้ไม่บล็อก thread</li><li><strong>Preemption:</strong> ตั้งแต่ Go 1.14 เป็นแบบ asynchronous (ใช้ signal) goroutine ที่วนลูปนาน ๆ จึงไม่ทำให้ตัวอื่นอดรัน</li></ol>
+</details>
+<h3 id="theory-46-การประกาศตัวแปรกับประสิทธิภาพของ-memory">46. การประกาศตัวแปรกับประสิทธิภาพของ memory</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li><strong>จำกัด scope</strong> ให้แคบที่สุด ตัวแปรจะได้ถูกคืนเร็ว และมีโอกาสอยู่บน stack</li><li><strong>Preallocate:</strong> <code>make([]T, 0, n)</code>, <code>make(map[K]V, n)</code>, <code>strings.Builder.Grow(n)</code> ดูข้อ 13</li><li><strong>ปล่อย reference</strong> ที่ไม่ใช้แล้ว เช่น ตั้งเป็น <code>nil</code> ตอนลบ element ออกจาก slice ของ pointer หรือใช้ <code>clear()</code></li><li>หลีกเลี่ยงการเก็บ sub-slice หรือ substring ของข้อมูลใหญ่ (ใช้ <code>strings.Clone</code> หรือ <code>bytes.Clone</code>)</li><li>ใช้ value type แทน pointer เมื่อ struct เล็ก จะช่วยลดงานของ GC</li></ul>
+</details>
+<h3 id="theory-47-dependency-management-กับ-version-control">47. Dependency management กับ version control</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li>เวอร์ชันของ module คือ <strong>git tag</strong> ตาม semver (<code>v1.2.3</code>) ถ้าไม่มี tag จะใช้ <strong>pseudo-version</strong> (<code>v0.0.0-20240101120000-abcdef123456</code>)</li><li><code>go.sum</code> เก็บ <strong>cryptographic hash</strong> ของทุก module ไว้ตรวจกับ checksum database (sum.golang.org) ป้องกัน supply-chain attack</li><li>เปลี่ยน major version (v2+) ต้องเปลี่ยน import path</li><li><code>retract</code> ใน go.mod ใช้ประกาศว่าเวอร์ชันไหนห้ามใช้</li><li>ใน CI ควรรัน <code>go mod verify</code> และ <code>go mod tidy -diff</code> เพื่อตรวจว่า go.mod และ go.sum ตรงกับโค้ด</li></ul>
+</details>
+<h3 id="theory-48-go-จัดการ-global-variable-อย่างไร-และมีผลอย่างไร">48. Go จัดการ global variable อย่างไร และมีผลอย่างไร?</h3>
+<details><summary>ดูคำตอบ</summary>
+<ul><li>initialize ตามลำดับ dependency ก่อน <code>init()</code> และ <code>main()</code> และอยู่ใน memory ตลอดอายุโปรแกรม เป็น root ของ GC สิ่งที่ global ชี้อยู่จึงไม่มีวันถูกเก็บ</li><li><strong>เสี่ยง data race</strong> ถ้าหลาย goroutine เขียน ต้องป้องกันด้วย <code>sync.Mutex</code>, <code>atomic</code> หรือ <code>sync.Once</code> (สำหรับ lazy init)</li><li>ทำให้ test ขนานกันไม่ได้ และ package ผูกกันแน่น</li><li>ถ้าจำเป็นต้องใช้ ให้ unexport แล้วเข้าถึงผ่านฟังก์ชัน</li></ul>
+</details>
+<h3 id="theory-49-pointer-ไปยัง-struct">49. Pointer ไปยัง struct</h3>
+<details><summary>ดูคำตอบ</summary>
+<div class="code"><span class="code-lang">go</span><pre><code>u := &amp;User{Name: <span class="t-string">&quot;Tah&quot;</span>}   <span class="t-comment">// composite literal + &amp; (นิยมใช้)</span>
+u.Name = <span class="t-string">&quot;Bee&quot;</span>            <span class="t-comment">// auto-dereference</span>
+<span class="t-kw">func</span> <span class="t-fn">Update</span>(u *User) { u.Age++ }   <span class="t-comment">// แก้ตัวจริง ไม่ copy</span></code></pre></div>
+<ul><li>เหมาะกับ struct ใหญ่ หรือ struct ที่ต้องแก้ค่า หรือมี Mutex</li><li><strong>ข้อควรระวัง:</strong> nil pointer dereference, หลาย goroutine ถือ pointer เดียวกันแล้วเกิด race และ pointer ที่ชี้เข้าไปใน slice (<code>&amp;s[i]</code>) อาจชี้ข้อมูลเก่าหลัง <code>append</code></li><li>struct เล็ก เช่น <code>Point{X,Y}</code> ส่งเป็น value มักเร็วกว่า เพราะไม่ escape และไม่เพิ่มงานให้ GC</li></ul>
+</details>
+<h3 id="theory-50-วิเคราะห์โค้ดเพื่อหาปัญหา-dependency-และ-memory">50. วิเคราะห์โค้ดเพื่อหาปัญหา dependency และ memory</h3>
+<details><summary>ดูคำตอบ</summary>
+<p><strong>Dependency</strong></p>
+<ul><li><code>go mod graph</code> และ <code>go mod why</code> ดูว่าอะไรดึงอะไรเข้ามา</li><li><code>govulncheck</code> ตรวจช่องโหว่</li><li>pin เวอร์ชันและ commit <code>go.sum</code></li><li>ลด dependency ที่ไม่จำเป็น (standard library มักพอแล้ว)</li></ul>
+<p><strong>Memory</strong> ตรวจโค้ดหา</p>
+<ul><li>resource ที่ไม่ได้ <code>Close()</code> (file, <code>resp.Body</code>, rows)</li><li>goroutine ที่ไม่มีทางจบ</li><li>global map หรือ cache ที่ไม่มี limit</li><li><code>time.After</code> ในลูปที่ทำงานนาน ๆ (ก่อน Go 1.23 timer จะค้างจนกว่าจะหมดเวลา)</li><li><code>defer</code> ภายในลูป (ทำงานตอนฟังก์ชันจบ ไม่ใช่ตอนจบแต่ละรอบ)</li></ul>
+<p>แล้ว<strong>วัดจริง</strong>ด้วย pprof, benchmark และ <code>-race</code> อย่าเดา</p>
+</details></article>
+  </div>
+</main>
+
+<script>
+(function () {
+  var TABS = ["problems", "solutions", "theory"];
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  // ---- tabs
+  function show(key, scrollTop) {
+    if (TABS.indexOf(key) < 0) key = "problems";
+    document.querySelectorAll(".tab").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === key ? "true" : "false");
+    });
+    document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== key; });
+    document.querySelectorAll("[data-toc]").forEach(function (t) { t.hidden = t.dataset.toc !== key; });
+    store.set("go-interview-tab", key);
+    if (scrollTop) window.scrollTo({ top: 0 });
+    spy();
+  }
+  document.querySelectorAll(".tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      show(b.dataset.tab, true);
+      try { history.replaceState(null, "", "#" + b.dataset.tab); } catch (e) {}
+    });
+  });
+  var initial = (location.hash || "").slice(1);
+  show(TABS.indexOf(initial) >= 0 ? initial : (store.get("go-interview-tab") || "problems"), false);
+
+  // ---- toc: scroll without touching the hash
+  document.querySelectorAll(".toc a").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el) el.scrollIntoView({ block: "start" });
+    });
+  });
+
+  // ---- scroll spy
+  var ticking = false;
+  function spy() {
+    var toc = document.querySelector(".toc:not([hidden])");
+    if (!toc) return;
+    var links = toc.querySelectorAll("a");
+    var current = null;
+    var offset = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) + 40;
+    links.forEach(function (a) {
+      var el = document.getElementById(a.getAttribute("href").slice(1));
+      if (el && el.getBoundingClientRect().top - offset <= 0) current = a;
+    });
+    links.forEach(function (a) { a.classList.toggle("active", a === current); });
+  }
+  window.addEventListener("scroll", function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(function () { spy(); ticking = false; }); }
+  }, { passive: true });
+
+  // ---- theory: open/close all answers
+  var theory = document.getElementById("panel-theory");
+  if (theory) {
+    var tools = document.createElement("div");
+    tools.className = "theory-tools";
+    tools.innerHTML = '<button type="button" id="open-all">เปิดคำตอบทั้งหมด</button>' +
+                      '<button type="button" id="close-all">ปิดคำตอบทั้งหมด</button>';
+    var firstP = theory.querySelector("p");
+    theory.insertBefore(tools, firstP ? firstP.nextSibling : theory.firstChild);
+    tools.addEventListener("click", function (e) {
+      var open = e.target.id === "open-all";
+      if (e.target.id !== "open-all" && e.target.id !== "close-all") return;
+      theory.querySelectorAll("details").forEach(function (d) { d.open = open; });
+    });
+  }
+
+  // ---- mark bug callouts
+  document.querySelectorAll(".prose strong").forEach(function (s) {
+    if (/^บั๊ก/.test(s.textContent)) s.classList.add("bug");
+  });
+
+  // ---- timer
+  var display = document.getElementById("timer-display");
+  var preset = document.getElementById("timer-preset");
+  var toggle = document.getElementById("timer-toggle");
+  var timerEl = document.getElementById("timer");
+  var remaining = 15 * 60, handle = null, endAt = 0;
+  function render() {
+    var m = Math.floor(Math.abs(remaining) / 60), s = Math.abs(remaining) % 60;
+    display.textContent = (remaining < 0 ? "-" : "") + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    timerEl.classList.toggle("done", remaining <= 0);
+  }
+  function tick() {
+    remaining = Math.round((endAt - Date.now()) / 1000);
+    render();
+  }
+  function stop() {
+    clearInterval(handle); handle = null;
+    timerEl.classList.remove("running");
+    toggle.textContent = "เริ่ม";
+  }
+  toggle.addEventListener("click", function () {
+    if (handle) { stop(); return; }
+    endAt = Date.now() + remaining * 1000;
+    handle = setInterval(tick, 250);
+    timerEl.classList.add("running");
+    toggle.textContent = "หยุด";
+  });
+  function reset() { stop(); remaining = parseInt(preset.value, 10) * 60; render(); }
+  document.getElementById("timer-reset").addEventListener("click", reset);
+  preset.addEventListener("change", reset);
+  render();
+
+  // keep --header-h in sync with the real header height
+  function measure() {
+    var h = document.querySelector(".masthead").getBoundingClientRect().height;
+    document.documentElement.style.setProperty("--header-h", Math.round(h) + "px");
+  }
+  measure();
+  window.addEventListener("resize", measure);
+})();
+</script>
+
+</body>
+</html>
